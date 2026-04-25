@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLM Council Fact-Check Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;1,8..60,400&family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F5F1EB;--surface:#EDE8DF;--card:#FFFFFF;
+  --accent:#C0392B;--amber:#8A5E1A;--ink:#1A1614;
+  --txt:#3D3530;--txt2:#7B6E68;--border:#D8D0C2;
+  --df:'Playfair Display',serif;
+  --db:'Source Serif 4',serif;
+  --ds:'Barlow Condensed',sans-serif;
+  --dm:'JetBrains Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:48px}
+body{background:var(--bg);color:var(--txt);font-family:var(--db);font-size:16px;line-height:1.7}
+
+/* Top bar */
+.top-bar{position:fixed;top:0;left:0;right:0;z-index:100;height:48px;background:rgba(245,241,235,0.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:20px}
+.top-bar-brand{font-family:var(--df);font-size:13px;font-weight:700;font-style:italic;color:var(--ink)}
+.top-bar-sep{color:var(--border);font-size:16px}
+.top-bar-title{font-family:var(--ds);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--txt2)}
+.top-bar-back{margin-left:auto;font-family:var(--ds);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--txt2);text-decoration:none;border:1px solid var(--border);padding:4px 10px;border-radius:2px;transition:.2s}
+.top-bar-back:hover{color:var(--accent);border-color:var(--accent)}
+
+/* Layout */
+.page{max-width:860px;margin:0 auto;padding:80px 40px 80px}
+
+/* Header */
+.report-header{padding:48px 0 40px;border-bottom:2px solid var(--ink)}
+.report-kicker{font-family:var(--ds);font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:16px;display:flex;align-items:center;gap:12px}
+.report-kicker::before{content:'';width:24px;height:1px;background:var(--accent)}
+.report-title{font-family:var(--df);font-size:clamp(36px,5vw,60px);font-weight:900;line-height:1;color:var(--ink);margin-bottom:20px}
+.report-meta{display:flex;flex-wrap:wrap;gap:24px;margin-top:20px}
+.meta-item{font-family:var(--ds);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--txt2)}
+.meta-item span{color:var(--ink)}
+
+/* Council pills */
+.council-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}
+.model-pill{font-family:var(--dm);font-size:11px;padding:4px 10px;border-radius:2px;border:1px solid var(--border);color:var(--txt2);background:var(--card)}
+
+/* Synthesis */
+.synthesis{margin:48px 0}
+.section-label{font-family:var(--ds);font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--txt2);margin-bottom:20px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+
+/* Issue cards */
+.issue-list{display:flex;flex-direction:column;gap:16px;margin-bottom:40px}
+.issue-card{background:var(--card);border:1px solid var(--border);border-radius:2px;padding:20px 24px;border-left:3px solid var(--accent)}
+.issue-card.lower{border-left-color:var(--amber)}
+.issue-card.dismiss{border-left-color:var(--border);opacity:.7}
+.issue-claim{font-family:var(--dm);font-size:12px;color:var(--txt2);margin-bottom:8px;font-style:italic}
+.issue-claim::before{content:'Claim: ';font-style:normal;font-weight:600;color:var(--txt2)}
+.issue-body{font-size:15px;color:var(--ink);line-height:1.65}
+.issue-tag{display:inline-block;font-family:var(--ds);font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:2px 7px;border-radius:1px;margin-bottom:10px}
+.tag-high{background:rgba(192,57,43,0.1);color:var(--accent)}
+.tag-low{background:rgba(138,94,26,0.1);color:var(--amber)}
+.tag-dismiss{background:var(--surface);color:var(--txt2)}
+
+/* Summary box */
+.summary-box{background:var(--ink);color:rgba(245,241,235,0.9);padding:32px 36px;border-radius:2px;margin:40px 0;font-size:15px;line-height:1.75;font-family:var(--db)}
+.summary-box .summary-label{font-family:var(--ds);font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(245,241,235,0.45);margin-bottom:14px}
+
+/* Raw findings */
+.raw-section{margin-top:56px;padding-top:32px;border-top:1px solid var(--border)}
+.model-block{margin-bottom:36px}
+.model-name{font-family:var(--ds);font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.raw-issue{padding:14px 16px;border:1px solid var(--border);border-radius:2px;margin-bottom:10px;font-size:14px;background:var(--card)}
+.raw-issue + .raw-issue{border-top:none;margin-top:-1px}
+.raw-field{margin-bottom:6px;line-height:1.6}
+.raw-field:last-child{margin-bottom:0}
+.raw-label{font-family:var(--ds);font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--txt2);margin-right:6px}
+.verdict-wrong{color:var(--accent)}
+.verdict-misleading{color:var(--amber)}
+.verdict-outdated{color:#2C5282}
+.verdict-unverifiable{color:var(--txt2)}
+
+@media(max-width:600px){
+  .page{padding:72px 20px 60px}
+  .report-meta{gap:16px}
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <span class="top-bar-brand">How LLMs Work</span>
+  <span class="top-bar-sep">/</span>
+  <span class="top-bar-title">Council Report</span>
+  <a href="index.html" class="top-bar-back">← Back to guide</a>
+</div>
+
+<main class="page">
+
+  <header class="report-header">
+    <div class="report-kicker">Fact-Check Report</div>
+    <h1 class="report-title">LLM Council</h1>
+    <div class="report-meta">
+      <div class="meta-item">Generated <span>2026-04-26</span></div>
+      <div class="meta-item">Synthesised by <span>Claude Opus 4.7</span></div>
+    </div>
+    <div class="council-row">
+      <div class="model-pill">GPT-4.1</div>
+      <div class="model-pill">Gemini 2.5 Pro</div>
+      <div class="model-pill">Llama 4 Maverick</div>
+    </div>
+  </header>
+
+  <section class="synthesis">
+
+    <div class="section-label">High Confidence — flagged by 2+ models</div>
+    <div class="issue-list">
+
+      <div class="issue-card">
+        <span class="issue-tag tag-high">High confidence</span>
+        <div class="issue-claim">Llama 3: 405B params, 15T tokens</div>
+        <div class="issue-body">The Llama 3.1 405B figure is now accurate but lacks a citation or date. Worth adding a source so readers can verify it isn't speculative.</div>
+      </div>
+
+      <div class="issue-card">
+        <span class="issue-tag tag-high">High confidence</span>
+        <div class="issue-claim">GPT-4 uses a vocabulary of 100,277 tokens via BPE</div>
+        <div class="issue-body">The 100,277 figure matches tiktoken's <code>cl100k_base</code> tokenizer, but OpenAI has never officially confirmed this for all GPT-4 variants. Consider softening to "GPT-4's tiktoken tokenizer uses approximately 100K tokens."</div>
+      </div>
+
+      <div class="issue-card">
+        <span class="issue-tag tag-high">High confidence · Factual error</span>
+        <div class="issue-claim">GPT-2 (2019): 1.6B params</div>
+        <div class="issue-body">GPT-2's largest model has <strong>1.5B parameters</strong> (1,558M), not 1.6B. This is a clear factual error worth correcting.</div>
+      </div>
+
+      <div class="issue-card">
+        <span class="issue-tag tag-high">High confidence</span>
+        <div class="issue-claim">Common Crawl — indexing 2.7 billion pages by 2024</div>
+        <div class="issue-body">This likely conflates a single monthly snapshot (~3B pages) with the cumulative archive (tens of billions of pages). Worth clarifying the distinction or citing the specific figure's source.</div>
+      </div>
+
+    </div>
+
+    <div class="section-label">Lower Confidence — flagged by 1 model</div>
+    <div class="issue-list">
+
+      <div class="issue-card lower">
+        <span class="issue-tag tag-low">Worth reviewing</span>
+        <div class="issue-claim">RLHF produces "more honest" responses</div>
+        <div class="issue-body">RLHF optimises for human preference, not truthfulness. Wording like "perceived as more helpful" is more accurate than "more honest."</div>
+      </div>
+
+      <div class="issue-card lower">
+        <span class="issue-tag tag-low">Worth reviewing</span>
+        <div class="issue-claim">Attribution: all facts traced back to Karpathy's lecture</div>
+        <div class="issue-body">Llama 3 and FineWeb figures postdate the November 2023 lecture. The attribution statement should acknowledge that some figures come from later sources.</div>
+      </div>
+
+      <div class="issue-card lower">
+        <span class="issue-tag tag-low">Worth reviewing</span>
+        <div class="issue-claim">PII removal finds "named individuals"</div>
+        <div class="issue-body">Current systems cannot reliably scrub all personal names. "Attempts to detect" is more accurate than implying complete removal.</div>
+      </div>
+
+      <div class="issue-card dismiss">
+        <span class="issue-tag tag-dismiss">Dismissable — intentional simplification</span>
+        <div class="issue-claim">SFT duration: "hours (not months)"</div>
+        <div class="issue-body">Flagged as potentially understating SFT time for large models. Reads as pedagogical contrast with pre-training duration — reasonable simplification.</div>
+      </div>
+
+    </div>
+
+    <div class="summary-box">
+      <div class="summary-label">Overall Assessment</div>
+      The guide is broadly accurate but contains several figures that deserve tightening. The highest-priority fix is the GPT-2 parameter count (1.5B, not 1.6B). The Common Crawl page count and the provenance statement also need updating. The Llama 3 405B and GPT-4 tokenizer claims are defensible but should be sourced explicitly. Softer edits are warranted around RLHF's honesty claim and PII removal capabilities.
+    </div>
+
+  </section>
+
+  <section class="raw-section">
+    <div class="section-label">Raw Findings by Model</div>
+
+    <div class="model-block">
+      <div class="model-name">GPT-4.1 — 4 issues</div>
+      <div class="raw-issue">
+        <div class="raw-field"><span class="raw-label">Claim</span>Llama 3: 405B params, 15T tokens</div>
+        <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-misleading">misleading</span></div>
+        <div class="raw-field"><span class="raw-label">Notes</span>As of June 2024, Meta has not released a 405B parameter Llama 3 model. The largest publicly announced is 70B. The 405B figure is speculative or refers to unreleased models.</div>
+      </div>
+      <div class="raw-issue">
+        <div class="raw-field"><span class="raw-label">Claim</span>GPT-4 uses a vocabulary of 100,277 tokens via BPE</div>
+        <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-misleading">misleading</span></div>
+        <div class="raw-field"><span class="raw-label">Notes</span>The 100,277 figure is accurate for GPT-4's tiktoken tokenizer, but not all GPT-4 variants use exactly this vocabulary or pure BPE.</div>
+      </div>
+      <div class="raw-issue">
+        <div class="raw-field"><span class="raw-label">Claim</span>SFT duration: hours (not months)</div>
+        <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-misleading">misleading</span></div>
+        <div class="raw-field"><span class="raw-label">Notes</span>For very large models and datasets, SFT can take days. "Hours" is only true for smaller setups.</div>
+      </div>
+      <div class="raw-issue">
+        <div class="raw-field"><span class="raw-label">Claim</span>RLHF produces responses that are "more honest"</div>
+        <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-misleading">misleading</span></div>
+        <div class="raw-field"><span class="raw-label">Notes</span>RLHF optimises for human preference, which may not align with truthfulness.</div>
+      </div>
+    </div>
+
+    <div class="model-block">
+      <div class="model-name">Gemini 2.5 Pro — 4 issues</div>
+      <div class="raw-issue">
+        <div class="raw-field"><span class="raw-label">Claim</span>Common Crawl — indexing 2.7 billion pages by 2024</div>
+        <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-misleading">misleading</span></div>
+        <div class="raw-field"><span class="raw-label">Notes</span>A single monthly crawl contains ~3B pages; the cumulative archive is tens of billions. The phrasing implies a total, making the figure misleadingly small.</div>
+      </div>
+      <div class="raw-issue">
+        <div class="raw-field"><span class="raw-label">Claim</span>PII removal finds "named individuals"</div>
+        <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-misleading">misleading</span></div>
+        <div class="raw-field"><span class="raw-label">Notes</span>Systems cannot reliably distinguish all private individuals from public figures or other non-PII names.</div>
+      </div>
+      <div class="raw-issue">
+        <div class="raw-field"><span class="raw-label">Claim</span>GPT-2 (2019): 1.6B params</div>
+        <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-wrong">wrong</span></div>
+        <div class="raw-field"><span class="raw-label">Notes</span>GPT-2's largest model has 1.5B parameters (1,558M), not 1.6B.</div>
+      </div>
+      <div class="raw-issue">
+        <div class="raw-field"><span class="raw-label">Claim</span>All facts traced back to Karpathy's lecture</div>
+        <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-wrong">wrong</span></div>
+        <div class="raw-field"><span class="raw-label">Notes</span>Llama 3 / FineWeb figures postdate the November 2023 lecture by months.</div>
+      </div>
+    </div>
+
+    <div class="model-block">
+      <div class="model-name">Llama 4 Maverick — 5 issues</div>
+      <div class="raw-issue">
+        <div class="raw-field"><span class="raw-label">Claim</span>Common Crawl — indexing 2.7 billion pages by 2024</div>
+        <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-outdated">outdated</span></div>
+        <div class="raw-field"><span class="raw-label">Notes</span>Figure may not reflect the most current Common Crawl statistics.</div>
+      </div>
+      <div class="raw-issue">
+        <div class="raw-field"><span class="raw-label">Claim</span>GPT-2: same quality today for ~$100</div>
+        <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-outdated">outdated</span></div>
+        <div class="raw-field"><span class="raw-label">Notes</span>Reproduction cost estimate has evolved significantly since the original claim.</div>
+      </div>
+      <div class="raw-issue">
+        <div class="raw-field"><span class="raw-label">Claim</span>GPT-4 uses a vocabulary of 100,277 tokens via BPE</div>
+        <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-unverifiable">unverifiable</span></div>
+        <div class="raw-field"><span class="raw-label">Notes</span>OpenAI has not officially confirmed GPT-4's exact vocabulary size.</div>
+      </div>
+      <div class="raw-issue">
+        <div class="raw-field"><span class="raw-label">Claim</span>Llama 3: 405B params, 15T tokens</div>
+        <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-unverifiable">unverifiable</span></div>
+        <div class="raw-field"><span class="raw-label">Notes</span>Specific details not publicly confirmed without an official source cited.</div>
+      </div>
+      <div class="raw-issue">
+        <div class="raw-field"><span class="raw-label">Claim</span>Modern frontier models: hundreds of billions of parameters, trillions of tokens</div>
+        <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-misleading">misleading</span></div>
+        <div class="raw-field"><span class="raw-label">Notes</span>Too vague to be informative given diversity of model sizes. (Likely intentional generalisation — dismissable.)</div>
+      </div>
+    </div>
+
+  </section>
+
+</main>
+</body>
+</html>
