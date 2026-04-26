@@ -34,6 +34,10 @@ Based on Andrej Karpathy's [Intro to Large Language Models](https://www.youtube.
 
 ---
 
+## HN discussion
+
+[Posted to Hacker News](https://news.ycombinator.com/item?id=47886517) and generated heated debate, mostly about it being LLM-generated. Fair point — but the content isn't the AI's. Every claim, figure, and framing is traced directly to Karpathy's lecture, not hallucinated by a model.
+
 ## Vibe check
 
 The code and content in this repo is mostly LLM-generated (Claude via Claude Code). The ideas, direction, and editorial decisions are mine — the implementation was largely written by AI. The council fact-checker exists precisely because of this: automated content warrants automated verification.
