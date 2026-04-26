@@ -21,7 +21,6 @@
 html{scroll-behavior:smooth;scroll-padding-top:48px}
 body{background:var(--bg);color:var(--txt);font-family:var(--db);font-size:16px;line-height:1.7}
 
-/* Top bar */
 .top-bar{position:fixed;top:0;left:0;right:0;z-index:100;height:48px;background:rgba(245,241,235,0.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:20px}
 .top-bar-brand{font-family:var(--df);font-size:13px;font-weight:700;font-style:italic;color:var(--ink)}
 .top-bar-sep{color:var(--border);font-size:16px}
@@ -29,10 +28,8 @@ body{background:var(--bg);color:var(--txt);font-family:var(--db);font-size:16px;
 .top-bar-back{margin-left:auto;font-family:var(--ds);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--txt2);text-decoration:none;border:1px solid var(--border);padding:4px 10px;border-radius:2px;transition:.2s}
 .top-bar-back:hover{color:var(--accent);border-color:var(--accent)}
 
-/* Layout */
 .page{max-width:860px;margin:0 auto;padding:80px 40px 80px}
 
-/* Header */
 .report-header{padding:48px 0 40px;border-bottom:2px solid var(--ink)}
 .report-kicker{font-family:var(--ds);font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:16px;display:flex;align-items:center;gap:12px}
 .report-kicker::before{content:'';width:24px;height:1px;background:var(--accent)}
@@ -40,16 +37,13 @@ body{background:var(--bg);color:var(--txt);font-family:var(--db);font-size:16px;
 .report-meta{display:flex;flex-wrap:wrap;gap:24px;margin-top:20px}
 .meta-item{font-family:var(--ds);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--txt2)}
 .meta-item span{color:var(--ink)}
-
-/* Council pills */
 .council-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}
 .model-pill{font-family:var(--dm);font-size:11px;padding:4px 10px;border-radius:2px;border:1px solid var(--border);color:var(--txt2);background:var(--card)}
+.anon-note{margin-top:12px;font-family:var(--db);font-size:13px;font-style:italic;color:var(--txt2)}
 
-/* Synthesis */
 .synthesis{margin:48px 0}
 .section-label{font-family:var(--ds);font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--txt2);margin-bottom:20px;padding-bottom:8px;border-bottom:1px solid var(--border)}
 
-/* Issue cards */
 .issue-list{display:flex;flex-direction:column;gap:16px;margin-bottom:40px}
 .issue-card{background:var(--card);border:1px solid var(--border);border-radius:2px;padding:20px 24px;border-left:3px solid var(--accent)}
 .issue-card.lower{border-left-color:var(--amber)}
@@ -62,16 +56,13 @@ body{background:var(--bg);color:var(--txt);font-family:var(--db);font-size:16px;
 .tag-low{background:rgba(138,94,26,0.1);color:var(--amber)}
 .tag-dismiss{background:var(--surface);color:var(--txt2)}
 
-/* Summary box */
 .summary-box{background:var(--ink);color:rgba(245,241,235,0.9);padding:32px 36px;border-radius:2px;margin:40px 0;font-size:15px;line-height:1.75;font-family:var(--db)}
 .summary-box .summary-label{font-family:var(--ds);font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(245,241,235,0.45);margin-bottom:14px}
 
-/* Raw findings */
 .raw-section{margin-top:56px;padding-top:32px;border-top:1px solid var(--border)}
 .model-block{margin-bottom:36px}
 .model-name{font-family:var(--ds);font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--border)}
 .raw-issue{padding:14px 16px;border:1px solid var(--border);border-radius:2px;margin-bottom:10px;font-size:14px;background:var(--card)}
-.raw-issue + .raw-issue{border-top:none;margin-top:-1px}
 .raw-field{margin-bottom:6px;line-height:1.6}
 .raw-field:last-child{margin-bottom:0}
 .raw-label{font-family:var(--ds);font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--txt2);margin-right:6px}
@@ -109,6 +100,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--db);font-size:16px;
       <div class="model-pill">Gemini 2.5 Pro</div>
       <div class="model-pill">Llama 4 Maverick</div>
     </div>
+    <p class="anon-note">Reviews were anonymised before synthesis — the synthesiser did not know which model produced which findings.</p>
   </header>
 
   <section class="synthesis">
@@ -118,26 +110,32 @@ body{background:var(--bg);color:var(--txt);font-family:var(--db);font-size:16px;
 
       <div class="issue-card">
         <span class="issue-tag tag-high">High confidence</span>
-        <div class="issue-claim">Llama 3: 405B params, 15T tokens</div>
-        <div class="issue-body">The Llama 3.1 405B figure is now accurate but lacks a citation or date. Worth adding a source so readers can verify it isn't speculative.</div>
+        <div class="issue-claim">Common Crawl — indexing 2.7 billion pages by 2024</div>
+        <div class="issue-body">The 2.7B figure refers to a single crawl dump processed for FineWeb, not the cumulative archive since 2007 which is vastly larger. The phrasing implies a running total, which is misleading.</div>
       </div>
 
       <div class="issue-card">
         <span class="issue-tag tag-high">High confidence</span>
         <div class="issue-claim">GPT-4 uses a vocabulary of 100,277 tokens via BPE</div>
-        <div class="issue-body">The 100,277 figure matches tiktoken's <code>cl100k_base</code> tokenizer, but OpenAI has never officially confirmed this for all GPT-4 variants. Consider softening to "GPT-4's tiktoken tokenizer uses approximately 100K tokens."</div>
-      </div>
-
-      <div class="issue-card">
-        <span class="issue-tag tag-high">High confidence · Factual error</span>
-        <div class="issue-claim">GPT-2 (2019): 1.6B params</div>
-        <div class="issue-body">GPT-2's largest model has <strong>1.5B parameters</strong> (1,558M), not 1.6B. This is a clear factual error worth correcting.</div>
+        <div class="issue-body">OpenAI has never officially confirmed GPT-4's vocabulary size. The 100,277 figure is the <code>cl100k_base</code> tokenizer associated with GPT-3.5/GPT-4 era models, but attributing it specifically to GPT-4 is unverified. Worth softening to "approximately 100K tokens."</div>
       </div>
 
       <div class="issue-card">
         <span class="issue-tag tag-high">High confidence</span>
-        <div class="issue-claim">Common Crawl — indexing 2.7 billion pages by 2024</div>
-        <div class="issue-body">This likely conflates a single monthly snapshot (~3B pages) with the cumulative archive (tens of billions of pages). Worth clarifying the distinction or citing the specific figure's source.</div>
+        <div class="issue-claim">GPT-2 training cost ~$40K; same quality today for ~$100</div>
+        <div class="issue-body">The $100 figure is a significant underestimate without context. Training a 1.5B parameter model from scratch still costs thousands of dollars. The $100 figure likely refers to toy-scale reproductions (e.g. Karpathy's nanoGPT), not full GPT-2 quality. Needs clarification.</div>
+      </div>
+
+      <div class="issue-card">
+        <span class="issue-tag tag-high">High confidence</span>
+        <div class="issue-claim">ChatGPT is "imitating what a skilled developer-labeler would write"</div>
+        <div class="issue-body">Misleading framing — coding ability and core knowledge come from pre-training on vast internet data, not from SFT labelers. SFT shapes style and assistant behaviour; it does not create underlying skills from scratch.</div>
+      </div>
+
+      <div class="issue-card">
+        <span class="issue-tag tag-high">High confidence — likely defensible</span>
+        <div class="issue-claim">Llama 3: 405B params, 15T tokens</div>
+        <div class="issue-body">Two models flagged this, but Llama 3.1 405B was publicly released in July 2024 with a 15T-token training set — so the claim appears correct. The flags reflect outdated reviewer knowledge. Worth adding a citation to confirm.</div>
       </div>
 
     </div>
@@ -147,33 +145,51 @@ body{background:var(--bg);color:var(--txt);font-family:var(--db);font-size:16px;
 
       <div class="issue-card lower">
         <span class="issue-tag tag-low">Worth reviewing</span>
-        <div class="issue-claim">RLHF produces "more honest" responses</div>
-        <div class="issue-body">RLHF optimises for human preference, not truthfulness. Wording like "perceived as more helpful" is more accurate than "more honest."</div>
+        <div class="issue-claim">44 TB FineWeb represents ~15 trillion tokens</div>
+        <div class="issue-body">FineWeb's published token count is approximately 15T tokens in its standard release. One reviewer claimed 22T — worth verifying against HuggingFace's published figures directly.</div>
       </div>
 
       <div class="issue-card lower">
         <span class="issue-tag tag-low">Worth reviewing</span>
-        <div class="issue-claim">Attribution: all facts traced back to Karpathy's lecture</div>
-        <div class="issue-body">Llama 3 and FineWeb figures postdate the November 2023 lecture. The attribution statement should acknowledge that some figures come from later sources.</div>
+        <div class="issue-claim">GPT-2 trained on 100B tokens</div>
+        <div class="issue-body">GPT-2 was trained on WebText (~40GB), typically estimated at 20–30B tokens. The 100B figure appears overstated.</div>
+      </div>
+
+      <div class="issue-card lower">
+        <span class="issue-tag tag-low">Worth reviewing</span>
+        <div class="issue-claim">Embedding size ~1,000–4,000 numbers</div>
+        <div class="issue-body">Frontier models often use embedding dimensions exceeding 8,000. The upper bound of 4,000 is too narrow for current models.</div>
+      </div>
+
+      <div class="issue-card lower">
+        <span class="issue-tag tag-low">Worth reviewing</span>
+        <div class="issue-claim">RLHF produces "more honest" responses</div>
+        <div class="issue-body">RLHF optimises for human preference, not truthfulness — and can reinforce sycophancy or hallucination if raters prefer confident-sounding wrong answers. "More helpful and better structured" is safer wording.</div>
       </div>
 
       <div class="issue-card lower">
         <span class="issue-tag tag-low">Worth reviewing</span>
         <div class="issue-claim">PII removal finds "named individuals"</div>
-        <div class="issue-body">Current systems cannot reliably scrub all personal names. "Attempts to detect" is more accurate than implying complete removal.</div>
+        <div class="issue-body">Full removal of all named persons is infeasible and not what filtering pipelines actually do. "Attempts to detect" is more accurate.</div>
       </div>
 
       <div class="issue-card dismiss">
-        <span class="issue-tag tag-dismiss">Dismissable — intentional simplification</span>
+        <span class="issue-tag tag-dismiss">Dismissed — intentional simplification</span>
         <div class="issue-claim">SFT duration: "hours (not months)"</div>
-        <div class="issue-body">Flagged as potentially understating SFT time for large models. Reads as pedagogical contrast with pre-training duration — reasonable simplification.</div>
+        <div class="issue-body">Borderline over-pedantic. Reads as a pedagogical contrast with pre-training duration, not a precise claim.</div>
+      </div>
+
+      <div class="issue-card dismiss">
+        <span class="issue-tag tag-dismiss">Dismissed — intentional simplification</span>
+        <div class="issue-claim">The model doesn't "think" — it computes a probability distribution</div>
+        <div class="issue-body">Standard accepted simplification for explaining next-token prediction. Not misleading in context.</div>
       </div>
 
     </div>
 
     <div class="summary-box">
       <div class="summary-label">Overall Assessment</div>
-      The guide is broadly accurate but contains several figures that deserve tightening. The highest-priority fix is the GPT-2 parameter count (1.5B, not 1.6B). The Common Crawl page count and the provenance statement also need updating. The Llama 3 405B and GPT-4 tokenizer claims are defensible but should be sourced explicitly. Softer edits are warranted around RLHF's honesty claim and PII removal capabilities.
+      The guide is largely sound as an educational overview, but several specific numerical claims need correction or clarification. The most serious issues are the <strong style="color:#fff">GPT-2-to-$100 cost comparison</strong> (needs context about scale), the <strong style="color:#fff">Common Crawl page count</strong> (conflates a single dump with the full archive), and the <strong style="color:#fff">"imitating a developer-labeler" framing</strong> (understates pre-training's role). The GPT-4 tokenizer and Llama 3 specs are defensible but should be sourced. Several flags target intentional simplifications appropriate for an educational context and can be dismissed.
     </div>
 
   </section>
@@ -182,79 +198,109 @@ body{background:var(--bg);color:var(--txt);font-family:var(--db);font-size:16px;
     <div class="section-label">Raw Findings by Model</div>
 
     <div class="model-block">
-      <div class="model-name">GPT-4.1 — 4 issues</div>
+      <div class="model-name">GPT-4.1 — 6 issues</div>
       <div class="raw-issue">
         <div class="raw-field"><span class="raw-label">Claim</span>Llama 3: 405B params, 15T tokens</div>
         <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-misleading">misleading</span></div>
-        <div class="raw-field"><span class="raw-label">Notes</span>As of June 2024, Meta has not released a 405B parameter Llama 3 model. The largest publicly announced is 70B. The 405B figure is speculative or refers to unreleased models.</div>
+        <div class="raw-field"><span class="raw-label">Notes</span>As of mid-2024, the largest publicly disclosed Llama 3 model was 70B parameters. (Note: Llama 3.1 405B was released July 2024 — this flag appears outdated.)</div>
       </div>
       <div class="raw-issue">
         <div class="raw-field"><span class="raw-label">Claim</span>GPT-4 uses a vocabulary of 100,277 tokens via BPE</div>
         <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-misleading">misleading</span></div>
-        <div class="raw-field"><span class="raw-label">Notes</span>The 100,277 figure is accurate for GPT-4's tiktoken tokenizer, but not all GPT-4 variants use exactly this vocabulary or pure BPE.</div>
+        <div class="raw-field"><span class="raw-label">Notes</span>The 100,277 figure is accurate for cl100k_base but not officially confirmed for GPT-4 specifically.</div>
+      </div>
+      <div class="raw-issue">
+        <div class="raw-field"><span class="raw-label">Claim</span>Embedding size ~1,000–4,000 numbers</div>
+        <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-misleading">misleading</span></div>
+        <div class="raw-field"><span class="raw-label">Notes</span>Most frontier models use 2,048–8,192+ dimensions. The upper bound of 4,000 is too narrow.</div>
+      </div>
+      <div class="raw-issue">
+        <div class="raw-field"><span class="raw-label">Claim</span>The model learns grammar, facts, reasoning patterns implicitly</div>
+        <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-misleading">misleading</span></div>
+        <div class="raw-field"><span class="raw-label">Notes</span>Overstates robustness of learned reasoning. (Dismissed as acceptable simplification.)</div>
       </div>
       <div class="raw-issue">
         <div class="raw-field"><span class="raw-label">Claim</span>SFT duration: hours (not months)</div>
         <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-misleading">misleading</span></div>
-        <div class="raw-field"><span class="raw-label">Notes</span>For very large models and datasets, SFT can take days. "Hours" is only true for smaller setups.</div>
+        <div class="raw-field"><span class="raw-label">Notes</span>Large-scale SFT can take days. (Dismissed as intentional simplification.)</div>
       </div>
       <div class="raw-issue">
         <div class="raw-field"><span class="raw-label">Claim</span>RLHF produces responses that are "more honest"</div>
         <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-misleading">misleading</span></div>
-        <div class="raw-field"><span class="raw-label">Notes</span>RLHF optimises for human preference, which may not align with truthfulness.</div>
+        <div class="raw-field"><span class="raw-label">Notes</span>RLHF optimises for human preference, not truthfulness — can reinforce sycophancy.</div>
       </div>
     </div>
 
     <div class="model-block">
-      <div class="model-name">Gemini 2.5 Pro — 4 issues</div>
+      <div class="model-name">Gemini 2.5 Pro — 6 issues</div>
       <div class="raw-issue">
         <div class="raw-field"><span class="raw-label">Claim</span>Common Crawl — indexing 2.7 billion pages by 2024</div>
         <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-misleading">misleading</span></div>
-        <div class="raw-field"><span class="raw-label">Notes</span>A single monthly crawl contains ~3B pages; the cumulative archive is tens of billions. The phrasing implies a total, making the figure misleadingly small.</div>
+        <div class="raw-field"><span class="raw-label">Notes</span>Refers to a single FineWeb crawl dump, not the cumulative archive since 2007.</div>
+      </div>
+      <div class="raw-issue">
+        <div class="raw-field"><span class="raw-label">Claim</span>44 TB FineWeb = ~15 trillion tokens</div>
+        <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-wrong">wrong</span></div>
+        <div class="raw-field"><span class="raw-label">Notes</span>Reviewer claims FineWeb contains ~22T tokens; the 15T figure is Llama 3's training mix. Needs verification against HuggingFace's published figures.</div>
       </div>
       <div class="raw-issue">
         <div class="raw-field"><span class="raw-label">Claim</span>PII removal finds "named individuals"</div>
         <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-misleading">misleading</span></div>
-        <div class="raw-field"><span class="raw-label">Notes</span>Systems cannot reliably distinguish all private individuals from public figures or other non-PII names.</div>
+        <div class="raw-field"><span class="raw-label">Notes</span>Full removal of all named persons is infeasible; pipelines focus on PII patterns, not all proper names.</div>
       </div>
       <div class="raw-issue">
-        <div class="raw-field"><span class="raw-label">Claim</span>GPT-2 (2019): 1.6B params</div>
+        <div class="raw-field"><span class="raw-label">Claim</span>GPT-2 trained on 100B tokens</div>
         <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-wrong">wrong</span></div>
-        <div class="raw-field"><span class="raw-label">Notes</span>GPT-2's largest model has 1.5B parameters (1,558M), not 1.6B.</div>
+        <div class="raw-field"><span class="raw-label">Notes</span>WebText (~40GB) corresponds to ~20–30B tokens, not 100B.</div>
       </div>
       <div class="raw-issue">
-        <div class="raw-field"><span class="raw-label">Claim</span>All facts traced back to Karpathy's lecture</div>
+        <div class="raw-field"><span class="raw-label">Claim</span>Same GPT-2 quality today for ~$100</div>
         <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-wrong">wrong</span></div>
-        <div class="raw-field"><span class="raw-label">Notes</span>Llama 3 / FineWeb figures postdate the November 2023 lecture by months.</div>
+        <div class="raw-field"><span class="raw-label">Notes</span>Training a 1.5B model from scratch still costs thousands of dollars. The $100 figure applies only to toy-scale runs.</div>
+      </div>
+      <div class="raw-issue">
+        <div class="raw-field"><span class="raw-label">Claim</span>ChatGPT imitates "a skilled developer-labeler"</div>
+        <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-misleading">misleading</span></div>
+        <div class="raw-field"><span class="raw-label">Notes</span>Core skills come from pre-training, not SFT labelers. SFT shapes style and assistant behaviour only.</div>
       </div>
     </div>
 
     <div class="model-block">
-      <div class="model-name">Llama 4 Maverick — 5 issues</div>
+      <div class="model-name">Llama 4 Maverick — 7 issues</div>
       <div class="raw-issue">
         <div class="raw-field"><span class="raw-label">Claim</span>Common Crawl — indexing 2.7 billion pages by 2024</div>
         <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-outdated">outdated</span></div>
-        <div class="raw-field"><span class="raw-label">Notes</span>Figure may not reflect the most current Common Crawl statistics.</div>
+        <div class="raw-field"><span class="raw-label">Notes</span>Figure may be an underestimate or conflation with a single crawl snapshot.</div>
       </div>
       <div class="raw-issue">
-        <div class="raw-field"><span class="raw-label">Claim</span>GPT-2: same quality today for ~$100</div>
+        <div class="raw-field"><span class="raw-label">Claim</span>GPT-4 uses a vocabulary of 100,277 tokens</div>
         <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-outdated">outdated</span></div>
-        <div class="raw-field"><span class="raw-label">Notes</span>Reproduction cost estimate has evolved significantly since the original claim.</div>
+        <div class="raw-field"><span class="raw-label">Notes</span>Exact vocabulary size not publicly disclosed by OpenAI.</div>
       </div>
       <div class="raw-issue">
-        <div class="raw-field"><span class="raw-label">Claim</span>GPT-4 uses a vocabulary of 100,277 tokens via BPE</div>
-        <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-unverifiable">unverifiable</span></div>
-        <div class="raw-field"><span class="raw-label">Notes</span>OpenAI has not officially confirmed GPT-4's exact vocabulary size.</div>
+        <div class="raw-field"><span class="raw-label">Claim</span>GPT-2 training cost ~$40K; same quality today for ~$100</div>
+        <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-misleading">misleading</span></div>
+        <div class="raw-field"><span class="raw-label">Notes</span>Actual cost depends on hardware, electricity, and model architecture — $100 is an oversimplification.</div>
       </div>
       <div class="raw-issue">
         <div class="raw-field"><span class="raw-label">Claim</span>Llama 3: 405B params, 15T tokens</div>
         <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-unverifiable">unverifiable</span></div>
-        <div class="raw-field"><span class="raw-label">Notes</span>Specific details not publicly confirmed without an official source cited.</div>
+        <div class="raw-field"><span class="raw-label">Notes</span>Specific details not publicly confirmed without an official citation.</div>
       </div>
       <div class="raw-issue">
         <div class="raw-field"><span class="raw-label">Claim</span>Modern frontier models: hundreds of billions of parameters, trillions of tokens</div>
+        <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-unverifiable">unverifiable</span></div>
+        <div class="raw-field"><span class="raw-label">Notes</span>Vague generalisation. (Dismissed — intentionally general and accurate.)</div>
+      </div>
+      <div class="raw-issue">
+        <div class="raw-field"><span class="raw-label">Claim</span>The model doesn't "think" — it computes a probability distribution</div>
         <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-misleading">misleading</span></div>
-        <div class="raw-field"><span class="raw-label">Notes</span>Too vague to be informative given diversity of model sizes. (Likely intentional generalisation — dismissable.)</div>
+        <div class="raw-field"><span class="raw-label">Notes</span>Standard simplification of next-token prediction. (Dismissed.)</div>
+      </div>
+      <div class="raw-issue">
+        <div class="raw-field"><span class="raw-label">Claim</span>ChatGPT imitates "a skilled developer-labeler"</div>
+        <div class="raw-field"><span class="raw-label">Verdict</span><span class="verdict-misleading">misleading</span></div>
+        <div class="raw-field"><span class="raw-label">Notes</span>Model generates based on patterns from all training data, not just labeler outputs.</div>
       </div>
     </div>
 
