@@ -8,7 +8,7 @@ permissions:
   contents: read
 jobs:
   chromium-parity:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -27,9 +27,11 @@ jobs:
       - name: Install pinned test tools
         working-directory: site/tests/translation-parity
         run: npm install --ignore-scripts --no-audit --no-fund --package-lock=false
-      - name: Install Chromium and system dependencies
+      - name: Install browser system and font dependencies
         working-directory: site/tests/translation-parity
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install-deps chromium
+      - name: Verify runner-provided Google Chrome
+        run: google-chrome --version
       - name: Test English / Chinese parity and capture desktop / mobile
         working-directory: site/tests/translation-parity
         env:

@@ -13,7 +13,7 @@ The runner:
 - Asserts identical JavaScript AST leaf token kinds and non-string token values.
   Writes every changed string/template fragment to per-page audit JSON. This
   is **not** a semantic equivalence proof: audit these display literals too.
-- Launches actual Chromium **with sandboxing enabled**, using local HTTP servers
+- Launches runner-installed Google Chrome (Chromium) **with sandboxing enabled**, using local HTTP servers
   only inside CI. No sandbox-disabling flag or workaround is used.
 - Captures all three English and Chinese pages at 1440×1000 and 390×844, with
   actual canvas rendering, seeded random values and real scroll/intersection
@@ -38,6 +38,21 @@ Run in an otherwise supported environment:
 
 ```sh
 npm install --ignore-scripts --no-audit --no-fund --package-lock=false
-npx playwright install --with-deps chromium
+npx playwright install-deps chromium
+# Requires an existing supported Google Chrome stable installation.
+google-chrome --version
 SITE_ROOT=/path/to/chinese UPSTREAM_ROOT=/path/to/locked-upstream npm test
 ```
+
+## Ubuntu sandbox compatibility
+
+The workflow pins Ubuntu 24.04 and selects the runner-provided Chrome stable
+channel. Ubuntu supplies an AppArmor profile for its normal installation path;
+the downloaded Chromium headless shell does not receive that profile. The browser
+launch retains `chromiumSandbox: true`. No AppArmor/sysctl/permission changes or
+sandbox-disabling flags are used. The report records the actual browser version.
+
+Sources:
+- https://chromium.googlesource.com/chromium/src/+/main/docs/security/apparmor-userns-restrictions.md
+- https://playwright.dev/docs/browsers#google-chrome--microsoft-edge
+- https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md

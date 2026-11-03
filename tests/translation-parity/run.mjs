@@ -138,7 +138,10 @@ async function interact(page, sub) {
 try {
   const urls = { en: await serve(UPSTREAM), zh: await serve(ROOT) };
   // Explicitly retain Chromium sandboxing. No --no-sandbox or environment workaround.
-  browser = await chromium.launch({ chromiumSandbox: true });
+  // Ubuntu ships an AppArmor profile for the runner-installed stable Chrome.
+  // Use that supported browser without weakening OS or browser sandbox settings.
+  browser = await chromium.launch({ channel: 'chrome', chromiumSandbox: true });
+  report.browser = { channel: 'chrome', version: browser.version(), chromiumSandbox: true };
   const auditPage = await browser.newPage();
   for (const sub of ['', 'how-to-use-llms', 'neural-networks']) await staticParity(auditPage, sub);
   await auditPage.close();
