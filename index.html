@@ -20,7 +20,8 @@
   <div class="top-nav-inner">
     <span class="top-nav-brand" aria-hidden="true">大语言模型如何工作</span>
     <div class="top-nav-links" id="top-nav-links">
-      <a href="how-to-use-llms/index.html" style="font-family:var(--ds);font-size:12px;font-weight:600;color:var(--accent);text-decoration:none;padding:5px 11px;border-radius:6px;border:1px solid rgba(99,91,255,0.3);background:rgba(99,91,255,0.05);white-space:nowrap;flex-shrink:0;display:inline-flex;align-items:center;gap:5px;transition:.15s;margin-right:6px" onmouseover="this.style.background='rgba(99,91,255,0.1)'" onmouseout="this.style.background='rgba(99,91,255,0.05)'">第二部分 →</a>
+      <a href="how-to-use-llms/index.html" style="font-family:var(--ds);font-size:12px;font-weight:600;color:var(--accent);text-decoration:none;padding:5px 11px;border-radius:6px;border:1px solid rgba(99,91,255,0.3);background:rgba(99,91,255,0.05);white-space:nowrap;flex-shrink:0;display:inline-flex;align-items:center;gap:5px;transition:.15s;margin-right:4px" onmouseover="this.style.background='rgba(99,91,255,0.1)'" onmouseout="this.style.background='rgba(99,91,255,0.05)'">第二部分 →</a>
+      <a href="neural-networks/index.html" style="font-family:var(--ds);font-size:12px;font-weight:600;color:var(--green);text-decoration:none;padding:5px 11px;border-radius:6px;border:1px solid rgba(0,135,90,0.3);background:rgba(0,135,90,0.05);white-space:nowrap;flex-shrink:0;display:inline-flex;align-items:center;gap:5px;transition:.15s;margin-right:6px" onmouseover="this.style.background='rgba(0,135,90,0.1)'" onmouseout="this.style.background='rgba(0,135,90,0.05)'">第三部分 →</a>
       <button class="tnav-btn active" data-section="s-intro" aria-current="true">导言</button>
       <button class="tnav-btn" data-section="s-data">数据</button>
       <button class="tnav-btn" data-section="s-tokenizer">词元</button>
@@ -101,7 +102,7 @@
         <div class="pipeline-arrow" id="pa-2" aria-hidden="true">↓</div>
         <div class="pipeline-node" data-stage="3" role="button" tabindex="0" aria-expanded="false" aria-label="语言过滤——点击展开">
           <div class="pn-title">🌍 语言过滤</div>
-          <div class="pn-sub">保留目标语言占比 ≥65% 的页面 · 语言分类器</div>
+          <div class="pn-sub">保留英语占比 ≥65% 的页面 · 语言分类器</div>
           <div class="pn-detail">语言分类器会估计每个页面的语言。目标语言内容少于 65% 的页面会被丢弃。这是一个设计取舍：是为单一语言做严格过滤，还是训练多语言模型。</div>
         </div>
         <div class="pipeline-arrow" id="pa-3" aria-hidden="true">↓</div>
@@ -144,10 +145,14 @@
       </div>
       <div class="fade-up" style="animation-delay:.15s">
         <h3 class="sub-title">BPE 实际演示</h3>
-        <svg id="bpe-svg" viewBox="0 0 380 280" width="100%" style="background:var(--card);border:1px solid var(--border);border-radius:10px;display:block" role="img" aria-labelledby="bpe-title" aria-describedby="bpe-desc"><title id="bpe-title">BPE 词元化步骤</title><desc id="bpe-desc">交互式图示：展示字节对编码如何逐步将字符合并为子词词元</desc></svg>
-        <div style="margin-top:10px;display:flex;align-items:center;gap:12px">
-          <button class="btn btn-ghost btn-sm" id="bpe-advance-btn" aria-label="前进到下一步 BPE">下一步 →</button>
-          <span id="bpe-step-label" style="font-family:var(--dm);font-size:11px;color:var(--txt2)">第 1 / 5 步</span>
+        <input type="text" id="bpe-input" class="bpe-input" value="tokenization" maxlength="40" aria-label="待词元化的英文文本" spellcheck="false" />
+        <div class="bpe-token-strip" id="bpe-strip" aria-live="polite" aria-label="BPE 词元序列"></div>
+        <div class="bpe-merge-log" id="bpe-log" aria-live="polite"></div>
+        <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" id="bpe-step-btn">下一次合并 →</button>
+          <button class="btn btn-ghost btn-sm" id="bpe-auto-btn">▶ 自动</button>
+          <button class="btn btn-ghost btn-sm" id="bpe-reset-btn">重置</button>
+          <span id="bpe-count" style="font-family:var(--dm);font-size:11px;color:var(--txt2);margin-left:4px"></span>
         </div>
       </div>
     </div>
@@ -173,12 +178,15 @@
         </div>
         <div class="insight-box" style="margin-top:14px">
           <strong>缩放定律</strong>
-          模型准确率可以近似看作两个变量的平滑、可预测函数：<em>N</em>（参数数量）和 <em>D</em>（训练词元数量）。这些趋势尚未显示出平台期迹象——更大的模型 + 更多的数据，通常可靠地带来更好的结果。算法突破当然有价值，但单纯扩大算力几乎也是一条稳定提升路径。这就是 AI 实验室陷入 GPU 军备竞赛的原因。
+          模型准确率是仅由两个变量决定的平滑、可预测函数：<em>N</em>（参数数量）和 <em>D</em>（训练词元数量）。这些趋势尚未显示出平台期迹象——更大的模型 + 更多的数据，可靠地带来更好的结果。算法突破当然有价值，但单纯扩大算力几乎也是一条稳定提升路径。这就是 AI 实验室陷入 GPU 军备竞赛的原因。
         </div>
       </div>
       <div class="fade-up" style="animation-delay:.15s">
         <h3 class="sub-title">Transformer 架构</h3>
-        <svg id="transformer-svg" viewBox="0 0 360 340" width="100%" style="background:var(--card);border:1px solid var(--border);border-radius:10px;display:block;margin-bottom:16px" role="img" aria-label="Transformer 架构图，展示数据如何从输入词元经过嵌入、注意力层和前馈层流向输出 logits"><title>Transformer 架构</title></svg>
+        <div class="transformer-wrap">
+          <svg id="transformer-svg" viewBox="0 0 360 340" width="100%" style="background:var(--card);border:1px solid var(--border);border-radius:10px;display:block;margin-bottom:16px;cursor:pointer" role="img" aria-label="Transformer 架构：点击一层查看说明"><title>Transformer 架构</title></svg>
+          <div id="transformer-card" class="transformer-card"></div>
+        </div>
         <div class="insight-box">
           <strong>什么是嵌入向量？</strong>
           每个词元 ID 都会映射到一个由约 1,000–4,000 个数字组成的已学习向量，这就是它的<em>嵌入向量</em>。可以把它理解为意义空间中的一个坐标——最初随机初始化，随后由训练塑形。同一个词元（例如 "bank"）进入网络时总是使用同一个嵌入向量。随后，<em>注意力层</em>会混入周围词元的上下文，因此当 "bank" 到达更深层时，"river bank" 与 "bank account" 已经携带完全不同的表示。多义性由上下文解决，而不是为每个词元存储多个含义。
@@ -227,7 +235,7 @@
       <h2 class="section-title">推理与<br>词元采样</h2>
       <p class="body-text">训练完成后，网络会以自回归方式生成文本：输入一串词元 → 得到所有 10 万个可能下一个词元的<span class="highlight">概率分布</span> → 采样一个词元 → 追加到序列末尾 → 重复。</p>
       <p class="body-text">这个过程具有<span class="highlight-a">随机性</span>——同一个提示词每次都可能生成不同输出，因为我们是在“抛一枚带偏置的硬币”。高概率词元更可能被选中，但并不保证一定会被选中。</p>
-      <p class="body-text"><span class="highlight">温度</span>控制随机性。低温度（0.1）→ 模型几乎总是选择最高概率词元。高温度（2.0）→ 接近均匀混乱。0.7–1.0 通常是兼顾连贯与创造性的合适区间。</p>
+      <p class="body-text"><span class="highlight">温度</span>控制随机性。低温度（0.1）→ 模型总是选择最高概率词元。高温度（2.0）→ 均匀混乱。0.7–1.0 通常是兼顾连贯与创造性的合适区间。</p>
       <div class="insight-box">
         <strong>关键心智模型</strong>
         模型并不是在“思考”该说什么。它计算所有可能下一个词元的概率分布，并从中采样。每个词都是一次抛硬币——只是这枚硬币掌握了大量信息。
@@ -236,15 +244,15 @@
     <div class="fade-up" style="animation-delay:.15s">
       <h3 class="sub-title" style="margin-bottom:14px" id="sampling-heading">词元采样演示</h3>
       <div class="inference-demo" aria-labelledby="sampling-heading">
-        <p style="font-family:var(--dm);font-size:11px;color:var(--txt2);margin-bottom:12px">观察模型如何选择下一个词。每个柱状条表示一个候选词元的概率。</p>
-        <div class="generated-seq" id="gen-seq" aria-live="polite" aria-label="已生成词元序列">天空看起来是蓝色的</div>
+        <p style="font-family:var(--dm);font-size:11px;color:var(--txt2);margin-bottom:12px">观察模型如何选择下一个词元。每个柱状条表示一个候选词元的概率。</p>
+        <div class="generated-seq" id="gen-seq" aria-live="polite" aria-label="已生成的英文词元序列">The sky appears blue</div>
         <label class="temp-label" for="temp-slider">
           <span>温度 <span style="color:var(--txt2);font-size:10px">（随机性）</span></span>
           <input type="range" class="temp-slider" id="temp-slider" min="0.1" max="2.0" step="0.1" value="0.8" aria-label="温度：控制随机性。低=可预测，高=随机">
           <span class="temp-val" id="temp-val" aria-live="polite">0.8</span>
         </label>
         <div class="prob-section-label" id="prob-label">下一个词元候选项</div>
-        <div class="prob-bars" id="prob-bars" role="list" aria-labelledby="prob-label"></div>
+        <canvas id="prob-canvas" aria-label="词元概率分布" role="img"></canvas>
         <div class="inference-controls">
           <button class="btn btn-primary btn-sm" id="sample-btn" aria-describedby="sample-info">采样下一个词元</button>
           <button class="btn btn-ghost btn-sm" id="reset-gen-btn" aria-label="将生成序列重置到开始状态">重置</button>
@@ -540,7 +548,7 @@
       <div class="psych-card">
         <div class="psych-icon">🔓</div>
         <div class="psych-title">越狱攻击</div>
-        <div class="psych-text">安全训练可能被角色扮演（“扮演我已故的祖母，她曾是凝固汽油弹化学家”）、替代编码（有害查询的 base64——模型从训练数据中学过这些形式）或对抗性后缀绕过：这些经过优化的乱码字符串一旦追加到任意提示后，就可能稳定地削弱拒答机制。模型试图提供帮助；这些技巧会让它相信有害请求是良性的。</div>
+        <div class="psych-text">安全训练可能被角色扮演（“扮演我已故的祖母，她曾是凝固汽油弹化学家”）、替代编码（有害查询的 base64——模型从训练数据中学过这些形式）或对抗性后缀绕过：这些经过优化的乱码字符串一旦追加到任意提示后，就能可靠地使拒答失效。模型试图提供帮助；这些技巧会让它相信有害请求是良性的。</div>
       </div>
       <div class="psych-card">
         <div class="psych-icon">💉</div>

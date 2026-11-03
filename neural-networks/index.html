@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>从零理解神经网络 — 可视化深度解析</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+.code-block{background:var(--ink);color:#A5B4FC;font-family:var(--dm);font-size:12.5px;line-height:1.75;padding:18px 20px;border-radius:var(--radius);margin:16px 0;overflow-x:auto;border:1px solid rgba(255,255,255,0.06);white-space:pre}
+.code-block .co{color:rgba(255,255,255,0.35)}
+.code-block .kw{color:#C084FC}
+.code-block .st{color:#86EFAC}
+.code-block .nm{color:#FCA5A5}
+.code-block .fn{color:#7DD3FC}
+.code-line-explain{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--purple);padding:14px 18px;margin-top:-4px;margin-bottom:16px;font-size:13.5px;color:var(--txt);font-family:var(--db);border-radius:0 var(--radius-sm) var(--radius-sm) 0;line-height:1.7}
+.code-line-explain code{font-family:var(--dm);font-size:12px;background:var(--card);padding:1px 5px;border-radius:3px;color:var(--purple)}
+.demo-box{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow-sm);margin-top:16px}
+.demo-label{font-family:var(--ds);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--txt2);margin-bottom:12px}
+.slider-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.slider-row label{font-family:var(--dm);font-size:12px;color:var(--txt2);width:30px;flex-shrink:0}
+.slider-row input[type=range]{flex:1;accent-color:var(--accent)}
+.slider-val{font-family:var(--dm);font-size:12px;color:var(--accent);width:40px;text-align:right;flex-shrink:0}
+.neuron-output{display:flex;gap:20px;margin-top:12px;font-family:var(--dm);font-size:12px}
+.neuron-output .n-label{color:var(--txt2)}
+.neuron-output .n-val{color:var(--accent);font-weight:600}
+.nn-svg-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-top:12px}
+.pipeline-full{display:flex;flex-direction:column;gap:0;margin-top:32px}
+.pipeline-stage{display:flex;gap:20px;opacity:0;transform:translateY(12px);transition:opacity .5s,transform .5s}
+.pipeline-stage.visible{opacity:1;transform:translateY(0)}
+.pipeline-connector{width:3px;background:var(--border);height:24px;margin-left:23px}
+.ps-num{font-family:var(--dm);font-size:11px;color:var(--txt2);padding-top:4px;flex-shrink:0;width:28px}
+.ps-content{flex:1;border-left:3px solid var(--border);padding:12px 16px;background:var(--card);border-radius:0 var(--radius-sm) var(--radius-sm) 0;border:1px solid var(--border)}
+.ps-title{font-family:var(--ds);font-size:12px;font-weight:700;letter-spacing:.04em;margin-bottom:4px}
+.ps-desc{font-size:13.5px;color:var(--txt);line-height:1.6}
+.ps-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+</style>
+</head>
+<body>
+<a href="#main-content" class="skip-link">跳转到主要内容</a>
+<div class="progress-bar" id="progress-bar" role="progressbar" aria-label="阅读进度" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+
+<nav class="top-nav" id="top-nav" aria-label="章节导航">
+  <div class="top-nav-inner">
+    <a href="../how-to-use-llms/index.html" class="top-nav-brand">← 第二部分</a>
+    <div class="top-nav-links" id="top-nav-links">
+      <button class="tnav-btn active" data-section="s-intro" aria-current="true">导言</button>
+      <button class="tnav-btn" data-section="s-problem">问题</button>
+      <button class="tnav-btn" data-section="s-neuron">神经元</button>
+      <button class="tnav-btn" data-section="s-layers">网络层</button>
+      <button class="tnav-btn" data-section="s-forward">前向传播</button>
+      <button class="tnav-btn" data-section="s-loss">损失</button>
+      <button class="tnav-btn" data-section="s-derivatives">导数</button>
+      <button class="tnav-btn" data-section="s-backprop">反向传播</button>
+      <button class="tnav-btn" data-section="s-gd">梯度下降</button>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="s-intro" class="section" aria-label="导言">
+  <canvas id="hero-canvas" aria-hidden="true"></canvas>
+  <div class="hero-content" id="main-content">
+    <div class="chapter-badge" aria-hidden="true">第三部分 · 零基础也能看懂</div>
+    <div class="hero-grid">
+      <div class="hero-left">
+        <h1 class="hero-title">神经网络<br><span>从零开始</span></h1>
+        <p class="hero-sub">从一个神经元出发，一步步搭建可运行的训练循环，理解神经网络学习背后的数学、直觉与代码。内容基于 Andrej Karpathy 的 micrograd 教程。</p>
+        <dl class="hero-stats">
+          <div class="stat-item"><dt class="stat-lbl">核心概念</dt><dd class="stat-val">8</dd></div>
+          <div class="stat-item"><dt class="stat-lbl">Python 代码行数</dt><dd class="stat-val">~50</dd></div>
+          <div class="stat-item"><dt class="stat-lbl">交互演示</dt><dd class="stat-val">5</dd></div>
+          <div class="stat-item"><dt class="stat-lbl">原讲座时长</dt><dd class="stat-val">2 小时</dd></div>
+        </dl>
+        <p class="stats-caveat">这是 <a href="../index.html" style="color:var(--accent)">第一部分：大语言模型如何工作</a>的配套内容。所有概念与代码均源自 Karpathy 的 micrograd 讲座。</p>
+        <div class="scroll-hint" aria-hidden="true"><div class="scroll-arrow"></div>向下滚动，开始探索</div>
+      </div>
+      <div class="hero-right">
+        <div class="typewriter-wrap" aria-label="神经网络核心洞见">
+          <div class="tw-label" aria-hidden="true">核心洞见</div>
+          <div class="tw-prompt">问：神经网络到底是什么？</div>
+          <div class="tw-response" id="tw-response" aria-live="polite" aria-atomic="true"><span class="tw-cursor" aria-hidden="true"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §1: THE PROBLEM -->
+<section id="s-problem" class="section" aria-label="我们要解决的问题">
+  <div class="section-inner two-col">
+    <div class="fade-up">
+      <div class="chapter-badge">第 1 章 · 为什么需要它</div>
+      <h2 class="section-title">我们要解决<br>什么问题？</h2>
+      <p class="body-text">动手之前，先弄清楚我们想做什么：给定一些输入，预测一个输出。比如，根据关于一个人的 4 项测量数据，预测这个人是否会喜欢某部电影。</p>
+      <p class="body-text">难点在于：我们不知道公式，也无法手写所有规则。我们想要的是一个能够 <span class="highlight">从样本中学出公式</span> 的系统——只需让它看到大量输入与输出的配对样本。</p>
+      <p class="body-text">神经网络就是这样的系统。起初，它是一个完全随机的函数。随后，它观察成千上万个样本，一点一点调整自己，直到预测足够准确。这个过程就叫作 <span class="highlight-a">训练</span>。</p>
+      <div class="insight-box">
+        <strong>与第一部分的联系</strong>
+        GPT 做的正是这件事，只不过规模大得多。它的“输入”是 token，“输出”是下一个 token，训练样本规模达到 15 万亿。背后的数学原理与我们在这里搭建的网络相同，只是规模更大。
+      </div>
+    </div>
+    <div class="fade-up" style="animation-delay:.15s">
+      <h3 class="sub-title">我们的训练数据集</h3>
+      <p class="body-text" style="margin-bottom:12px">用一个小例子来具体说明。每个样本有四个输入和一个目标输出：</p>
+      <div class="demo-box">
+        <div class="demo-label">训练样本（xs → ys）</div>
+        <div class="code-block">
+<span class="co"># 输入：[x1, x2, x3, x4]</span>
+xs = [
+  [<span class="nm">2.0</span>, <span class="nm">3.0</span>, <span class="nm">-1.0</span>, <span class="nm">1.0</span>],
+  [<span class="nm">3.0</span>, <span class="nm">-1.0</span>, <span class="nm">0.5</span>, <span class="nm">1.0</span>],
+  [<span class="nm">0.5</span>, <span class="nm">1.0</span>, <span class="nm">1.0</span>, <span class="nm">1.0</span>],
+  [<span class="nm">1.0</span>, <span class="nm">1.0</span>, <span class="nm">-1.0</span>, <span class="nm">1.0</span>],
+]
+<span class="co"># 目标：我们希望网络给出的输出</span>
+ys = [<span class="nm">1.0</span>, <span class="nm">-1.0</span>, <span class="nm">-1.0</span>, <span class="nm">1.0</span>]
+        </div>
+        <div class="code-line-explain">
+          <code>xs</code> 是输入数据，共 4 个样本，每个样本包含 4 个数。 <code>ys</code> 是每个样本的“正确答案”：1.0 或 -1.0。网络起初一无所知，需要学会从 xs 到 ys 的映射。
+        </div>
+      </div>
+      <div class="insight-box" style="margin-top:16px">
+        <strong>为什么是 -1 和 1？</strong>
+        这里使用 tanh 作为激活函数（第 2 章会详细介绍），它的输出介于 -1 和 1 之间。因此，目标值也设为 -1 和 1，与这一范围相匹配。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §2: NEURON -->
+<section id="s-neuron" class="section" aria-label="什么是神经元">
+  <div class="section-inner two-col">
+    <div class="fade-up">
+      <div class="chapter-badge">第 2 章 · 基本构件</div>
+      <h2 class="section-title">什么是<br>神经元？</h2>
+      <p class="body-text">神经元只是一个小小的数学函数。可以把它想象成一个 <span class="highlight">调光开关</span>：接收一组输入，决定各个输入有多重要（权重），加上自身默认的倾向（偏置），再把结果压缩到一个有限范围内。</p>
+      <p class="body-text">公式为： <span class="highlight-a">输出 = tanh(w₁·x₁ + w₂·x₂ + b)</span></p>
+      <p class="body-text">其中，w₁、w₂ 是 <span class="highlight">权重</span> （“这个输入有多重要？”），b 是 <span class="highlight">偏置</span> （“输入全为零时，我的默认倾向是什么？”），而 <span class="highlight-g">tanh</span> 会把结果压缩到 -1 和 1 之间。</p>
+      <div class="code-block">
+<span class="kw">class</span> <span class="fn">Value</span>:
+  <span class="kw">def</span> <span class="fn">__init__</span>(<span class="nm">self</span>, data):
+    <span class="nm">self</span>.data = data   <span class="co"># 实际数值</span>
+    <span class="nm">self</span>.grad = <span class="nm">0.0</span>   <span class="co"># 梯度（稍后计算填入）</span>
+
+  <span class="kw">def</span> <span class="fn">__mul__</span>(<span class="nm">self</span>, other):
+    <span class="kw">return</span> <span class="fn">Value</span>(<span class="nm">self</span>.data * other.data)
+
+  <span class="kw">def</span> <span class="fn">__add__</span>(<span class="nm">self</span>, other):
+    <span class="kw">return</span> <span class="fn">Value</span>(<span class="nm">self</span>.data + other.data)
+
+  <span class="kw">def</span> <span class="fn">tanh</span>(<span class="nm">self</span>):
+    <span class="kw">import</span> math
+    t = math.<span class="fn">tanh</span>(<span class="nm">self</span>.data)
+    <span class="kw">return</span> <span class="fn">Value</span>(t)
+      </div>
+      <div class="code-line-explain">
+        <code>self.data</code> 就是一个数，比如 0.5 或 -1.3。 <code>self.grad</code> 初始为零，在反向传播（第 7 章）时计算填入。 <code>__mul__</code> 和 <code>__add__</code> 方法让我们能对 Value 对象使用普通的 Python 数学运算符（+、*）。 <code>tanh</code> 将任意数值压缩到 (-1, 1) 范围内。
+      </div>
+      <div class="insight-box">
+        <strong>为什么用 tanh？</strong>
+        如果没有激活函数，无论叠多少层神经元，最终都只是一个线性函数。tanh 引入了非线性，这才让网络能够学习复杂的模式。
+      </div>
+    </div>
+    <div class="fade-up" style="animation-delay:.15s">
+      <h3 class="sub-title">神经元实验台</h3>
+      <p class="body-text" style="margin-bottom:8px">拖动滑块调整权重和偏置，观察神经元输出实时变化。输入固定为：x₁ = 0.5，x₂ = −0.3。</p>
+      <div class="demo-box" id="neuron-playground">
+        <div class="demo-label">交互式神经元</div>
+        <div class="slider-row">
+          <label>w₁</label>
+          <input type="range" id="np-w1" min="-2" max="2" step="0.05" value="0.5" aria-label="权重 1">
+          <span class="slider-val" id="np-w1-val">0.50</span>
+        </div>
+        <div class="slider-row">
+          <label>w₂</label>
+          <input type="range" id="np-w2" min="-2" max="2" step="0.05" value="-0.3" aria-label="权重 2">
+          <span class="slider-val" id="np-w2-val">-0.30</span>
+        </div>
+        <div class="slider-row">
+          <label>b</label>
+          <input type="range" id="np-b" min="-2" max="2" step="0.05" value="0.0" aria-label="偏置">
+          <span class="slider-val" id="np-b-val">0.00</span>
+        </div>
+        <canvas id="neuron-canvas" width="400" height="220" style="width:100%;display:block;margin-top:8px;border-radius:var(--radius-sm);border:1px solid var(--border)"></canvas>
+        <div class="neuron-output" style="margin-top:10px">
+          <span><span class="n-label">加权和加偏置： </span><span class="n-val" id="np-raw">0.00</span></span>
+          <span><span class="n-label">tanh 输出： </span><span class="n-val" id="np-out">0.00</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §3: LAYERS -->
+<section id="s-layers" class="section" aria-label="网络层与架构">
+  <div class="section-inner two-col">
+    <div class="fade-up">
+      <div class="chapter-badge">第 3 章 · 网络架构</div>
+      <h2 class="section-title">网络层与<br>多层感知机</h2>
+      <p class="body-text">单个神经元不足以学习复杂的模式。我们把神经元组织成 <span class="highlight">层</span>，再将多层堆叠成 <span class="highlight-a">多层感知机（MLP）</span>。可以把它想象成一条流水线：第一层处理原始输入，下一层处理上一层提取的结果，依此类推。</p>
+      <p class="body-text">神经元之间的每条连接都对应一个权重。一个“4 个输入 → 3 个神经元 → 1 个输出”的网络有 <span class="highlight">(4×3) + (3×1) = 15 个权重</span>，此外还有偏置。GPT-4 的结构也一样，只是有 4050 亿个权重。</p>
+      <div class="code-block">
+<span class="kw">class</span> <span class="fn">Neuron</span>:
+  <span class="kw">def</span> <span class="fn">__init__</span>(<span class="nm">self</span>, nin):
+    <span class="nm">self</span>.w = [<span class="fn">Value</span>(random.uniform(-<span class="nm">1</span>,<span class="nm">1</span>)) <span class="kw">for</span> _ <span class="kw">in</span> range(nin)]
+    <span class="nm">self</span>.b = <span class="fn">Value</span>(<span class="nm">0</span>)
+  <span class="kw">def</span> <span class="fn">__call__</span>(<span class="nm">self</span>, x):
+    act = sum(wi*xi <span class="kw">for</span> wi,xi <span class="kw">in</span> zip(<span class="nm">self</span>.w, x)) + <span class="nm">self</span>.b
+    <span class="kw">return</span> act.<span class="fn">tanh</span>()
+
+<span class="kw">class</span> <span class="fn">Layer</span>:
+  <span class="kw">def</span> <span class="fn">__init__</span>(<span class="nm">self</span>, nin, nout):
+    <span class="nm">self</span>.neurons = [<span class="fn">Neuron</span>(nin) <span class="kw">for</span> _ <span class="kw">in</span> range(nout)]
+  <span class="kw">def</span> <span class="fn">__call__</span>(<span class="nm">self</span>, x):
+    <span class="kw">return</span> [n(x) <span class="kw">for</span> n <span class="kw">in</span> <span class="nm">self</span>.neurons]
+
+<span class="kw">class</span> <span class="fn">MLP</span>:
+  <span class="kw">def</span> <span class="fn">__init__</span>(<span class="nm">self</span>, nin, nouts):
+    sizes = [nin] + nouts
+    <span class="nm">self</span>.layers = [<span class="fn">Layer</span>(sizes[i], sizes[i+<span class="nm">1</span>]) <span class="kw">for</span> i <span class="kw">in</span> range(len(nouts))]
+  <span class="kw">def</span> <span class="fn">__call__</span>(<span class="nm">self</span>, x):
+    <span class="kw">for</span> layer <span class="kw">in</span> <span class="nm">self</span>.layers: x = layer(x)
+    <span class="kw">return</span> x[<span class="nm">0</span>] <span class="kw">if</span> len(x) == <span class="nm">1</span> <span class="kw">else</span> x
+      </div>
+      <div class="code-line-explain">
+        <code>Neuron(nin)</code> 创建一个具有 <code>nin</code> 个随机权重的神经元。 <code>Layer(nin, nout)</code> 创建 <code>nout</code> 个神经元，每个神经元接收 <code>nin</code> 个输入。 <code>MLP(4, [3,1])</code> 创建一个 4→3→1 的网络。 <code>__call__</code> 让 Python 对象可以像函数一样被调用，因此 <code>model(x)</code> 会执行前向传播。
+      </div>
+    </div>
+    <div class="fade-up" style="animation-delay:.15s">
+      <h3 class="sub-title">MLP 架构</h3>
+      <p class="body-text" style="margin-bottom:12px">一个 4→3→1 的网络：4 个输入，一个包含 3 个神经元的隐藏层，以及 1 个输出。</p>
+      <div class="nn-svg-wrap">
+        <svg id="mlp-svg" viewBox="0 0 340 220" width="100%" role="img" aria-label="多层感知机架构图"></svg>
+      </div>
+      <div class="insight-box" style="margin-top:16px">
+        <strong>用一行代码创建模型</strong>
+        <div class="code-block" style="margin-top:8px">n = <span class="fn">MLP</span>(<span class="nm">4</span>, [<span class="nm">3</span>, <span class="nm">1</span>])  <span class="co"># 4 个输入 → 3 个隐藏神经元 → 1 个输出</span></div>
+        就这么简单。我们得到了一个随机初始化的网络：4×3 + 3×1 = 15 个权重，加上 4 个偏置，共 19 个可学习参数。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §4: FORWARD PASS -->
+<section id="s-forward" class="section" aria-label="前向传播">
+  <div class="section-inner two-col">
+    <div class="fade-up">
+      <div class="chapter-badge">第 4 章 · 计算输出</div>
+      <h2 class="section-title">前向<br>传播</h2>
+      <p class="body-text">前向传播很简单：让数据从左到右流过网络。各个神经元依次计算，将输出传给下一层，最终得到一个预测结果。</p>
+      <p class="body-text">起初，权重是随机的，所以预测没有什么意义。但我们仍然可以执行前向传播——我们需要它来计算预测错得有多离谱（第 5 章），从而知道如何改进。</p>
+      <div class="code-block">
+<span class="co"># 将一个训练样本输入网络</span>
+x = [<span class="fn">Value</span>(<span class="nm">2.0</span>), <span class="fn">Value</span>(<span class="nm">3.0</span>), <span class="fn">Value</span>(-<span class="nm">1.0</span>), <span class="fn">Value</span>(<span class="nm">1.0</span>)]
+prediction = n(x)
+print(prediction.data)  <span class="co"># 例如 0.23</span>
+      </div>
+      <div class="code-line-explain">
+        <code>n(x)</code> 调用 MLP 的 <code>__call__</code> 方法，依次遍历各层并将其作用于 <code>x</code>。每一层都会调用其中的每个神经元：先计算 <code>w·x + b</code>，再应用 tanh，然后将输出传给下一层。最终的数值就是预测结果。整个过程只是一连串乘法和加法。
+      </div>
+      <div class="insight-box">
+        <strong>一切都是数值</strong>
+        每一步，我们都只是在计算数值。复杂之处在于要同时处理数十亿个参数，但对每个参数所做的操作都只是简单的算术。
+      </div>
+    </div>
+    <div class="fade-up" style="animation-delay:.15s">
+      <h3 class="sub-title">前向传播可视化</h3>
+      <p class="body-text" style="margin-bottom:8px">点击“运行前向传播”，观察数据流过一个 2→3→1 的网络。每个节点都会亮起并显示计算结果。</p>
+      <div class="demo-box">
+        <div class="demo-label">交互式前向传播</div>
+        <svg id="fp-svg" viewBox="0 0 360 200" width="100%" style="display:block" role="img" aria-label="前向传播动画"></svg>
+        <div style="margin-top:12px;display:flex;gap:10px">
+          <button class="btn btn-primary btn-sm" id="fp-run-btn">▶ 运行前向传播</button>
+          <button class="btn btn-ghost btn-sm" id="fp-reset-btn">重置</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §5: LOSS -->
+<section id="s-loss" class="section" aria-label="损失函数">
+  <div class="section-inner two-col">
+    <div class="fade-up">
+      <div class="chapter-badge">第 5 章 · 衡量误差</div>
+      <h2 class="section-title">损失——我们<br>错得有多远？</h2>
+      <p class="body-text">前向传播给出了预测结果。现在需要衡量这些预测有多不准确。 <span class="highlight">损失函数</span> 就像一张成绩单：用一个数概括“你现在的预测有多差”。</p>
+      <p class="body-text">我们使用 <span class="highlight-a">均方误差（MSE）</span>：对每个样本，将预测值与目标值之差平方，再对所有样本取平均。平方保证损失始终为正，并对较大的错误施加更重的惩罚。</p>
+      <p class="body-text">训练的目标，就是让这个损失值尽可能小。</p>
+      <div class="code-block">
+<span class="co"># 将所有训练样本输入网络</span>
+ypred = [n(x) <span class="kw">for</span> x <span class="kw">in</span> xs]
+loss = sum((yout - ygt)**<span class="nm">2</span> <span class="kw">for</span> ygt, yout <span class="kw">in</span> zip(ys, ypred))
+print(loss.data)  <span class="co"># 例如 4.73——最初的预测误差很大</span>
+      </div>
+      <div class="code-line-explain">
+        对每个样本， <code>yout</code> 是网络的预测值， <code>ygt</code> 是真实的目标值。 <code>(yout - ygt)**2</code> 将误差平方。如果预测为 0.23，而目标为 1.0，那么平方误差为 (0.23−1.0)² = 0.59。将 4 个样本的平方误差相加，得到一个数。训练的任务就是让它趋近于零。
+      </div>
+    </div>
+    <div class="fade-up" style="animation-delay:.15s">
+      <h3 class="sub-title">损失曲面</h3>
+      <p class="body-text" style="margin-bottom:8px">损失是所有权重的函数。可以把它想象成起伏的地形——我们希望让小球滚到最低点。点击“前进一步”，执行一次梯度下降更新。</p>
+      <div class="demo-box">
+        <div class="demo-label">损失曲线上的梯度下降</div>
+        <canvas id="loss-canvas" width="400" height="160" style="width:100%;display:block;border-radius:var(--radius-sm);border:1px solid var(--border)"></canvas>
+        <div class="slider-row" style="margin-top:12px">
+          <label style="width:80px;color:var(--txt2);font-family:var(--dm);font-size:12px">学习率</label>
+          <input type="range" id="loss-lr" min="0.01" max="0.5" step="0.01" value="0.1" aria-label="学习率">
+          <span class="slider-val" id="loss-lr-val">0.10</span>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:10px;align-items:center">
+          <button class="btn btn-primary btn-sm" id="loss-step-btn">前进一步 ↓</button>
+          <button class="btn btn-ghost btn-sm" id="loss-reset-btn">重置</button>
+          <span style="font-family:var(--dm);font-size:12px;color:var(--txt2)">w = <span id="loss-w-val" style="color:var(--accent)">3.00</span> · 损失 = <span id="loss-val-display" style="color:var(--red)">1.00</span></span>
+        </div>
+      </div>
+      <div class="insight-box" style="margin-top:16px">
+        <strong>损失始终是一个数</strong>
+        这一点很重要。我们需要一个数，才能确定一个优化方向。如果损失是一个向量，我们就不知道该往哪边走。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §6: DERIVATIVES -->
+<section id="s-derivatives" class="section" aria-label="导数与梯度">
+  <div class="section-inner two-col">
+    <div class="fade-up">
+      <div class="chapter-badge">第 6 章 · 变化的数学</div>
+      <h2 class="section-title">导数——<br>哪边是下坡？</h2>
+      <p class="body-text">我们想让损失降低。为此，需要知道：对每个权重来说，增大它会让损失上升还是下降？这正是 <span class="highlight">导数</span> 告诉我们的信息。</p>
+      <p class="body-text">想象自己站在山坡上。虽然看不到完整地形，但可以用脚感受哪个方向是下坡。导数就像这种“感觉”——它表示当前位置处损失的变化斜率。</p>
+      <p class="body-text">我们会用到这些关键规则：</p>
+      <ul style="font-size:15.5px;line-height:2;padding-left:20px;color:var(--txt)">
+        <li><strong style="color:var(--accent)">加法：</strong> d/dx(a + b) = 1——加法会原样传递梯度</li>
+        <li><strong style="color:var(--amber)">乘法：</strong> d/dx(a · b) = b——梯度会乘以另一个因子</li>
+        <li><strong style="color:var(--green)">tanh:</strong> d/dx(tanh(x)) = 1 − tanh²(x)——链式法则会处理这一步</li>
+      </ul>
+      <div class="insight-box">
+        <strong>一句话理解链式法则</strong>
+        如果 A 影响 B，而 B 影响损失，那么 A 对损失的影响 =（A 对 B 的影响）×（B 对损失的影响）。第 7 章将利用这一规则，让梯度反向传遍整个网络。
+      </div>
+    </div>
+    <div class="fade-up" style="animation-delay:.15s">
+      <h3 class="sub-title">导数可视化</h3>
+      <p class="body-text" style="margin-bottom:8px">沿着 f(x) = x² 拖动曲线上的点。切线展示该位置的斜率（导数）。注意：x=0 时斜率为 0；离中心越远，曲线越陡。</p>
+      <div class="demo-box">
+        <div class="demo-label">f(x) = x²——拖动曲线上的点</div>
+        <canvas id="deriv-canvas" width="400" height="200" style="width:100%;display:block;border-radius:var(--radius-sm);border:1px solid var(--border);cursor:ew-resize"></canvas>
+        <div style="margin-top:10px;font-family:var(--dm);font-size:12px">
+          x = <span id="deriv-x" style="color:var(--accent)">1.00</span> &nbsp;·&nbsp;
+          f(x) = <span id="deriv-fx" style="color:var(--amber)">1.00</span> &nbsp;·&nbsp;
+          f'(x) = <span id="deriv-dfx" style="color:var(--green)">2.00</span>
+        </div>
+      </div>
+      <div class="insight-box" style="margin-top:16px">
+        <strong>梯度与导数</strong>
+        导数描述单变量函数的变化。梯度将这个想法扩展到多个变量——每个权重对应一个变化率。损失的梯度同时告诉我们，它沿各个权重方向如何变化。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §7: BACKPROPAGATION -->
+<section id="s-backprop" class="section" aria-label="反向传播">
+  <div class="section-inner two-col">
+    <div class="fade-up">
+      <div class="chapter-badge">第 7 章 · 找出误差的来源</div>
+      <h2 class="section-title">反向传播</h2>
+      <p class="body-text">我们已经知道损失，也理解了导数。但面对成百上千个权重，怎样知道哪些权重导致了误差，以及影响有多大？</p>
+      <p class="body-text"><span class="highlight">反向传播</span> 可以高效地解决这个问题。它沿计算图反向行进：从损失出发，经过每个运算，回到每个权重，并使用链式法则计算各个权重的梯度。</p>
+      <p class="body-text">Karpathy 的核心洞见是： <em>“反向传播做的唯一一件事，就是递归地应用链式法则。”</em> 仅此而已。这是按规则执行的计算，而不是魔法。</p>
+      <div class="code-block">
+<span class="kw">for</span> p <span class="kw">in</span> n.parameters(): p.grad = <span class="nm">0.0</span>
+ypred = [n(x) <span class="kw">for</span> x <span class="kw">in</span> xs]
+loss = sum((yout - ygt)**<span class="nm">2</span> <span class="kw">for</span> ygt, yout <span class="kw">in</span> zip(ys, ypred))
+loss.<span class="fn">backward</span>()
+<span class="co"># 现在每个 p 都有 p.grad：增大 p 时，损失的变化率为 p.grad</span>
+      </div>
+      <div class="code-line-explain">
+        <code>p.grad = 0.0</code> 清除上一步训练残留的梯度，否则梯度会不断累积。 <code>loss.backward()</code> 反向遍历产生 <code>loss</code>的所有运算，在每个节点应用链式法则。调用结束后，每个权重都有一个 <code>.grad</code> ，表示“增大这个权重时，损失的变化率是多少”。
+      </div>
+    </div>
+    <div class="fade-up" style="animation-delay:.15s">
+      <h3 class="sub-title">表达式计算图</h3>
+      <p class="body-text" style="margin-bottom:8px">来看一个简单的表达式：e = tanh((a·b) + a)。点击“前向传播”计算数值，再点击“反向传播”观察梯度反向流动。</p>
+      <div class="demo-box">
+        <div class="demo-label">计算图——e = tanh((a·b) + a)</div>
+        <div class="bp-inputs">
+          <div class="bp-input-group">
+            <label for="bp-a">a =</label>
+            <input type="number" id="bp-a" value="2" step="0.5" min="-5" max="5">
+          </div>
+          <div class="bp-input-group">
+            <label for="bp-b">b =</label>
+            <input type="number" id="bp-b" value="-3" step="0.5" min="-5" max="5">
+          </div>
+        </div>
+        <div style="position:relative">
+          <div id="bp-tooltip" class="bp-tooltip"></div>
+          <svg id="graph-svg" viewBox="0 0 420 200" width="100%" style="display:block" role="img" aria-label="带反向传播的表达式计算图"></svg>
+        </div>
+        <div class="bp-status" id="bp-status">修改 a 和 b，然后点击“前向传播”</div>
+        <div style="margin-top:10px;display:flex;gap:10px">
+          <button class="btn btn-primary btn-sm" id="graph-forward-btn">▶ 前向传播</button>
+          <button class="btn btn-ghost btn-sm" id="graph-back-btn" disabled>← 反向传播</button>
+          <button class="btn btn-ghost btn-sm" id="graph-reset-btn">重置</button>
+        </div>
+      </div>
+      <div class="insight-box" style="margin-top:16px">
+        <strong>为什么要反过来？</strong>
+        我们已经知道损失对自身的导数是 1.0。从这里反向计算，每个节点只需要来自后方（更靠近损失端）节点的梯度，就能计算自己的梯度。这就是链式法则的递归应用。
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §8: GRADIENT DESCENT -->
+<section id="s-gd" class="section" aria-label="梯度下降与训练">
+  <div class="section-inner">
+    <div class="fade-up" style="margin-bottom:40px">
+      <div class="chapter-badge">第 8 章 · 学习</div>
+      <h2 class="section-title">梯度下降——<br>训练循环</h2>
+      <p class="body-text" style="max-width:680px">有了梯度，就可以用起来了。更新规则很简单：让每个权重沿其梯度的反方向移动一小步。之所以取反方向，是因为梯度指向上坡，而我们要走的是 <em>下坡</em>。</p>
+    </div>
+    <div class="two-col">
+      <div class="fade-up">
+        <div class="code-block">
+<span class="co"># 创建网络</span>
+n = <span class="fn">MLP</span>(<span class="nm">4</span>, [<span class="nm">3</span>, <span class="nm">1</span>])
+
+<span class="kw">for</span> step <span class="kw">in</span> range(<span class="nm">100</span>):
+  ypred = [n(x) <span class="kw">for</span> x <span class="kw">in</span> xs]          <span class="co"># 1. 前向传播</span>
+  loss = sum((yout-ygt)**<span class="nm">2</span>
+             <span class="kw">for</span> ygt,yout <span class="kw">in</span> zip(ys,ypred)) <span class="co"># 2. 计算损失</span>
+  <span class="kw">for</span> p <span class="kw">in</span> n.<span class="fn">parameters</span>(): p.grad=<span class="nm">0.0</span>  <span class="co"># 3. 梯度清零</span>
+  loss.<span class="fn">backward</span>()                         <span class="co"># 4. 反向传播</span>
+  <span class="kw">for</span> p <span class="kw">in</span> n.<span class="fn">parameters</span>():
+    p.data -= <span class="nm">0.01</span> * p.grad             <span class="co"># 5. 更新参数</span>
+  print(f<span class="st">"步数 {step} 损失 {loss.data:.4f}"</span>)
+        </div>
+        <div class="code-line-explain">
+          逐步来看： <strong>前向传播</strong> ——输入全部 4 个样本，得到 4 个预测结果。 <strong>损失</strong> ——将误差平方后求和，得到一个数。 <strong>梯度清零</strong> ——梯度会累积，所以每次反向传播前都要清零。 <strong>反向传播</strong> ——通过链式法则计算每个 <code>.grad</code> 。 <strong>更新参数</strong> — <code>p.data -= 0.01 * p.grad</code> 让每个权重沿梯度的反方向移动一小步。0.01 是学习率。重复 100 次，损失便会从约 4 降至接近 0。
+        </div>
+      </div>
+      <div class="fade-up" style="animation-delay:.15s">
+        <h3 class="sub-title" style="margin-bottom:8px">训练过程中的损失</h3>
+        <canvas id="training-canvas" width="400" height="180" style="width:100%;display:block;background:var(--card);border:1px solid var(--border);border-radius:var(--radius)"></canvas>
+        <div class="insight-box" style="margin-top:16px">
+          <strong>用文字串起完整循环</strong>
+          <ol style="margin:10px 0 0;padding-left:18px;line-height:2.1;font-size:13.5px">
+            <li>让数据向前流动，得到预测</li>
+            <li>衡量预测有多不准确（损失）</li>
+            <li>反向计算各个权重对误差的影响</li>
+            <li>沿着减小误差的方向微调每个权重</li>
+            <li>重复以上过程</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pipeline summary -->
+    <div class="fade-up" style="margin-top:60px">
+      <div class="chapter-badge" style="color:var(--purple);justify-content:center">完整流程</div>
+      <h3 class="sub-title" style="text-align:center;margin-top:12px;margin-bottom:32px">从随机权重到预测结果</h3>
+      <div class="pipeline-full" id="nn-pipeline">
+        <div class="pipeline-stage">
+          <div class="ps-num">01</div>
+          <div class="ps-content" style="border-left:3px solid var(--cyan)">
+            <div class="ps-title" style="color:var(--cyan)">定义神经元</div>
+            <div class="ps-desc">每个神经元：输入的加权和 + 偏置 → tanh。权重从随机值开始。Value 类记录数值及其梯度。</div>
+            <div class="ps-tags"><span class="tag tag-c">Value 类</span><span class="tag tag-c">权重</span><span class="tag tag-c">偏置</span><span class="tag tag-c">tanh</span></div>
+          </div>
+        </div>
+        <div class="pipeline-connector"></div>
+        <div class="pipeline-stage">
+          <div class="ps-num">02</div>
+          <div class="ps-content" style="border-left:3px solid var(--amber)">
+            <div class="ps-title" style="color:var(--amber)">堆叠成 MLP</div>
+            <div class="ps-desc">神经元 → 网络层 → MLP。每层的输出成为下一层的输入，每条连接对应一个权重。我们的 4→3→1 网络共有 19 个参数。</div>
+            <div class="ps-tags"><span class="tag tag-a">神经元</span><span class="tag tag-a">网络层</span><span class="tag tag-a">MLP</span></div>
+          </div>
+        </div>
+        <div class="pipeline-connector"></div>
+        <div class="pipeline-stage">
+          <div class="ps-num">03</div>
+          <div class="ps-content" style="border-left:3px solid var(--purple)">
+            <div class="ps-title" style="color:var(--purple)">前向传播</div>
+            <div class="ps-desc">让训练数据从左到右流过网络。每个神经元进行计算，并将输出传给下一层。最终，每个样本都得到一个预测结果。</div>
+            <div class="ps-tags"><span class="tag tag-p">__call__</span><span class="tag tag-p">激活值</span></div>
+          </div>
+        </div>
+        <div class="pipeline-connector"></div>
+        <div class="pipeline-stage">
+          <div class="ps-num">04</div>
+          <div class="ps-content" style="border-left:3px solid var(--red)">
+            <div class="ps-title" style="color:var(--red)">计算损失</div>
+            <div class="ps-desc">均方误差：将（预测值 − 目标值）² 求和，得到一个标量。损失起初较大，随着训练逐渐趋近于零。</div>
+            <div class="ps-tags"><span class="tag tag-g" style="color:var(--red);border-color:rgba(223,27,65,.25);background:var(--red-d)">MSE</span><span class="tag tag-g" style="color:var(--red);border-color:rgba(223,27,65,.25);background:var(--red-d)">标量损失</span></div>
+          </div>
+        </div>
+        <div class="pipeline-connector"></div>
+        <div class="pipeline-stage">
+          <div class="ps-num">05</div>
+          <div class="ps-content" style="border-left:3px solid var(--green)">
+            <div class="ps-title" style="color:var(--green)">反向传播</div>
+            <div class="ps-desc">反向遍历计算图，在每个节点应用链式法则。每个权重得到一个 .grad，表示增大它时损失的变化率。</div>
+            <div class="ps-tags"><span class="tag tag-g">backward()</span><span class="tag tag-g">链式法则</span><span class="tag tag-g">梯度</span></div>
+          </div>
+        </div>
+        <div class="pipeline-connector"></div>
+        <div class="pipeline-stage">
+          <div class="ps-num">06</div>
+          <div class="ps-content" style="border-left:3px solid var(--cyan);background:linear-gradient(135deg,rgba(5,112,222,0.04),transparent)">
+            <div class="ps-title" style="color:var(--cyan)">梯度下降 → 重复</div>
+            <div class="ps-desc">对每个权重执行 p.data -= lr * p.grad，沿下坡方向移动一小步。清零梯度，反复执行“前向传播 → 计算损失 → 反向传播 → 更新参数”数百步，损失便接近 0。</div>
+            <div class="ps-tags"><span class="tag tag-c">学习率</span><span class="tag tag-c">权重更新</span><span class="tag tag-c">训练循环</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="fade-up" style="text-align:center;margin-top:60px">
+      <p class="body-text" style="max-width:560px;margin:0 auto;color:var(--txt2)">
+        本页基于 Andrej Karpathy 的 <a href="https://www.youtube.com/watch?v=VMj-3S1tku0" target="_blank" rel="noopener" style="color:var(--accent)">《神经网络与反向传播详解：构建 micrograd》</a> 讲座。现在，你已经能从代码层面理解 <a href="../index.html" style="color:var(--accent)">第一部分训练章节</a> 背后的数学原理了。
+      </p>
+      <p style="margin-top:16px;font-family:var(--ds);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--txt2)">
+        <a href="../index.html" style="color:var(--txt2);text-decoration:none;border-bottom:1px solid var(--border);padding-bottom:1px;transition:.2s" onmouseover="this.style.color='var(--accent)';this.style.borderColor='var(--accent)'" onmouseout="this.style.color='var(--txt2)';this.style.borderColor='var(--border)'">← 第一部分：大语言模型如何工作</a>
+        <span style="margin:0 12px;opacity:.4">·</span>
+        <a href="../how-to-use-llms/index.html" style="color:var(--txt2);text-decoration:none;border-bottom:1px solid var(--border);padding-bottom:1px;transition:.2s" onmouseover="this.style.color='var(--accent)';this.style.borderColor='var(--accent)'" onmouseout="this.style.color='var(--txt2)';this.style.borderColor='var(--border)'">← 第二部分：如何使用大语言模型</a>
+        <span style="margin:0 12px;opacity:.4">·</span>
+        <a href="https://www.youtube.com/watch?v=VMj-3S1tku0" target="_blank" rel="noopener" style="color:var(--txt2);text-decoration:none;border-bottom:1px solid var(--border);padding-bottom:1px;transition:.2s" onmouseover="this.style.color='var(--accent)';this.style.borderColor='var(--accent)'" onmouseout="this.style.color='var(--txt2)';this.style.borderColor='var(--border)'">原始讲座</a>
+      </p>
+    </div>
+  </div>
+</section>
+
+<script src="main.js"></script>
+</body>
+</html>

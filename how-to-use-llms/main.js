@@ -7,7 +7,14 @@
   let W, H, tokens = [];
   const WORDS = ['search','voice','code','docs','think','chat','agent','plan','debug','read','write','API','tool','PDF','ask','plot','research','query','zip','model','o1','o3','GPT','Claude','Gemini','Cursor','prompt','memory','image','vision','memo','Whisper','draft','edit','run','cite','parse','RAG','deep','tune','eval'];
 
-  function resize() { W = canvas.width = canvas.offsetWidth; H = canvas.height = canvas.offsetHeight; }
+  function resize() {
+    const dpr = window.devicePixelRatio || 1;
+    W = canvas.offsetWidth;
+    H = canvas.offsetHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
 
   function makeToken() {
     const word = WORDS[Math.floor(Math.random() * WORDS.length)];
@@ -48,10 +55,10 @@
 (function(){
   const el = document.getElementById('tw-response');
   const messages = [
-    "It has no memory of you, its knowledge is 6–12 months stale, and every answer is a probabilistic sample. Treat it like a brilliant intern — not an oracle.",
-    "For timeless knowledge, skip web search — the weights are enough. For anything recent, time-sensitive, or esoteric — enable search or use Perplexity.",
-    "Voice removes half the friction. Super Whisper can route ~50% of your queries hands-free. Switch to typing for product names and library names Whisper gets wrong.",
-    "Thinking models (o1, o3) are for hard problems. They're slower and pricier — don't waste them on simple tasks. Claude Sonnet often beats o1 Pro on nuanced code."
+    "它没有关于你的记忆，知识滞后 6–12 个月，每个回答都是概率采样的结果。把它当作聪明的实习生，而不是无所不知的权威。",
+    "对于不随时间变化的知识，可以不搜索，模型权重已经足够。遇到最新、时效性强或冷门的问题，则应启用搜索或使用 Perplexity。",
+    "语音能减少输入负担。Super Whisper 可让约一半的查询免于手动输入；遇到 Whisper 容易识别错的产品名或库名，再改用打字。",
+    "思考模型（o1、o3）适合难题，速度更慢、价格更高，不必用于简单任务。在细致的代码任务上，Claude Sonnet 往往比 o1 Pro 表现更好。"
   ];
   let mi = 0, ci = 0, deleting = false;
 
@@ -89,14 +96,14 @@
   const runBtn = document.getElementById('thinking-run-btn');
 
   const steps = [
-    { icon: '🔍', text: "Let me think about what it means for a number to be odd..." },
-    { icon: '📐', text: "An odd number can be written as 2k+1 for some integer k. Let me use that definition." },
-    { icon: '🔄', text: "If I have two odd numbers: a = 2j+1 and b = 2k+1..." },
-    { icon: '➕', text: "Their sum: a + b = (2j+1) + (2k+1) = 2j + 2k + 2 = 2(j+k+1)" },
-    { icon: '✓', text: "Since j+k+1 is an integer, 2(j+k+1) is divisible by 2 — which is the definition of even." },
+    { icon: '🔍', text: "先想一想，奇数意味着什么……" },
+    { icon: '📐', text: "奇数可以写成 2k+1，其中 k 为整数。下面利用这个定义。" },
+    { icon: '🔄', text: "设两个奇数为 a = 2j+1 和 b = 2k+1……" },
+    { icon: '➕', text: "两者之和：a + b = (2j+1) + (2k+1) = 2j + 2k + 2 = 2(j+k+1)" },
+    { icon: '✓', text: "因为 j+k+1 是整数，2(j+k+1) 能被 2 整除，所以结果是偶数。" },
   ];
 
-  const answer = "Let two odd integers be a = 2j+1 and b = 2k+1. Then a+b = 2j+1 + 2k+1 = 2(j+k+1). Since j+k+1 ∈ ℤ, the sum is even. □";
+  const answer = "设两个奇整数为 a = 2j+1、b = 2k+1，则 a+b = 2j+1 + 2k+1 = 2(j+k+1)。因为 j+k+1 ∈ ℤ，所以它们的和为偶数。□";
 
   let running = false;
 
@@ -104,14 +111,14 @@
     if (running) return;
     running = true;
     runBtn.disabled = true;
-    runBtn.textContent = 'Thinking...';
+    runBtn.textContent = '思考中……';
     stepsEl.innerHTML = '';
     answerEl.style.display = 'none';
 
     let elapsed = 0;
     const timer = setInterval(() => {
       elapsed++;
-      timeEl.textContent = `thinking for ${elapsed}s...`;
+      timeEl.textContent = `已思考 ${elapsed} 秒……`;
     }, 1000);
 
     steps.forEach((step, i) => {
@@ -125,11 +132,11 @@
 
     setTimeout(() => {
       clearInterval(timer);
-      timeEl.textContent = `thought for ${steps.length - 1}s`;
+      timeEl.textContent = `思考了 ${steps.length - 1} 秒`;
       answerEl.style.display = 'block';
       contentEl.textContent = answer;
       runBtn.disabled = false;
-      runBtn.textContent = '↺ Run again';
+      runBtn.textContent = '↺ 再运行一次';
       running = false;
     }, steps.length * 700 + 300);
   });
@@ -153,7 +160,7 @@
     if (running) return;
     running = true;
     runBtn.disabled = true;
-    runBtn.textContent = 'Simulating...';
+    runBtn.textContent = '模拟中……';
     resetSteps();
 
     const timings = [0, 800, 1700, 2700];
@@ -167,7 +174,7 @@
     setTimeout(() => {
       resultEl.style.display = 'block';
       runBtn.disabled = false;
-      runBtn.textContent = '↺ Simulate again';
+      runBtn.textContent = '↺ 再模拟一次';
       running = false;
     }, 3700);
   }
@@ -186,8 +193,13 @@
   function drawChart() {
     const canvas = document.getElementById('chart-canvas');
     if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.offsetWidth || 340;
+    const H = 160;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
     const ctx = canvas.getContext('2d');
-    const W = canvas.width, H = canvas.height;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const pad = { l: 36, r: 12, t: 12, b: 24 };
     const cW = W - pad.l - pad.r, cH = H - pad.t - pad.b;
 
@@ -195,7 +207,7 @@
     ctx.fillStyle = '#0A1628';
     ctx.fillRect(0, 0, W, H);
 
-    const countries = ['USA','Japan','Germany','UK','France','Italy','Canada'];
+    const countries = ['美国','日本','德国','英国','法国','意大利','加拿大'];
     const colors = ['#0D9488','#6EE7E7','#FCD34D','#C4B5FD','#F9A8D4','#86EFAC','#FCA5A5'];
     const years = Array.from({length: 34}, (_, i) => 1990 + i);
 
@@ -280,7 +292,7 @@
       steps[2].style.display = 'block';
       drawChart();
       runBtn.disabled = false;
-      runBtn.textContent = '↺ Run again';
+      runBtn.textContent = '↺ 再运行一次';
       running = false;
     }, 2400);
   });
@@ -309,7 +321,7 @@
       } else {
         clearInterval(interval);
         runBtn.disabled = false;
-        runBtn.textContent = '↺ Animate again';
+        runBtn.textContent = '↺ 重播动画';
         running = false;
       }
     }, 600);

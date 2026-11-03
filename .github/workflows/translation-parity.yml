@@ -1,0 +1,46 @@
+name: Translation parity
+on:
+  push:
+    branches: [main, sync/upstream-20261103]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  chromium-parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: site
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: ynarwal/how-llms-work
+          ref: 1add5a7225cfa1292d5641b7d8e65bbd05beb8fd
+          path: upstream
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned test tools
+        working-directory: site/tests/translation-parity
+        run: npm install --ignore-scripts --no-audit --no-fund --package-lock=false
+      - name: Install Chromium and system dependencies
+        working-directory: site/tests/translation-parity
+        run: npx playwright install --with-deps chromium
+      - name: Test English / Chinese parity and capture desktop / mobile
+        working-directory: site/tests/translation-parity
+        env:
+          SITE_ROOT: ${{ github.workspace }}/site
+          UPSTREAM_ROOT: ${{ github.workspace }}/upstream
+        run: npm test
+      - name: Upload screenshots and verification report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: translation-parity-chromium
+          path: site/tests/translation-parity/artifacts
+          if-no-files-found: warn
+          retention-days: 14

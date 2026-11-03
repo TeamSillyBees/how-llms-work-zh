@@ -8,8 +8,12 @@
   const WORDS = ['the','of','and','a ','to','in ','is ','it ','ing','tion','pre','er ','un','re ','ed ','ly ','ness','ment','ize','BPE','seq','dim','MLP','key','vec','loss','grad','mask','head','norm','next','data','text','byte','GPT','LLM','soft','max','Adam','logit','embed','token','layer','atten'];
 
   function resize() {
-    W = canvas.width = canvas.offsetWidth;
-    H = canvas.height = canvas.offsetHeight;
+    const dpr = window.devicePixelRatio || 1;
+    W = canvas.offsetWidth;
+    H = canvas.offsetHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
   function makeToken() {
@@ -61,9 +65,9 @@
 (function(){
   const el = document.getElementById('tw-response');
   const messages = [
-    "It's a large language model — a neural network with 405 billion parameters trained to predict the next token in a sequence...",
-    "The magic is in the weights: 15 trillion tokens of training data compressed into parameters that encode human knowledge...",
-    "Every word you see is sampled from a probability distribution over 100,277 possible tokens. There's no magic — just math at scale."
+    "这是一个大语言模型：拥有 4050 亿参数的神经网络，通过训练预测序列中的下一个词元……",
+    "奥妙藏在权重中：15 万亿词元的训练数据被压缩进参数，用来编码人类知识……",
+    "你看到的每个词都来自对 100,277 个候选词元的概率分布进行采样。这不是魔法，而是大规模数学运算。"
   ];
   let mi = 0, ci = 0, deleting = false, pauseTimer = null;
 
@@ -91,112 +95,199 @@
 })();
 
 // ═══════════════════════════════════════════════
-// BPE VISUALIZATION SVG
+// BPE VISUALIZATION — live tokenizer (rebuilt)
 // ═══════════════════════════════════════════════
 (function(){
-  const svg = document.getElementById('bpe-svg');
-  const steps = [
-    { label: 'Raw Text', tokens: ['t','o','k','e','n','i','z','a','t','i','o','n'], desc: 'Start: individual characters' },
-    { label: 'Bytes (UTF-8)', tokens: ['116','111','107','101','110','105','122','97','116','105','111','110'], desc: 'Encode to byte IDs (0–255)' },
-    { label: 'After BPE merge 1', tokens: ['to','k','en','i','za','ti','on'], desc: 'Merge frequent pairs' },
-    { label: 'After BPE merge 2', tokens: ['token','iza','tion'], desc: 'Continue merging' },
-    { label: 'Final Tokens', tokens: ['token','ization'], desc: 'GPT-4: 2 tokens for this word' }
+  const input   = document.getElementById('bpe-input');
+  const strip   = document.getElementById('bpe-strip');
+  const log     = document.getElementById('bpe-log');
+  const stepBtn = document.getElementById('bpe-step-btn');
+  const autoBtn = document.getElementById('bpe-auto-btn');
+  const resetBtn= document.getElementById('bpe-reset-btn');
+  const countEl = document.getElementById('bpe-count');
+  if (!input || !strip) return;
+
+  // Ordered BPE merge rules — representative of GPT-style English BPE
+  const MERGES = [
+    ['t','h'],['e','r'],['i','n'],['a','n'],['o','n'],['a','l'],
+    ['th','e'],['e','d'],['i','t'],['o','r'],['o','u'],['e','n'],
+    ['a','t'],['in','g'],['a','r'],['o','f'],['t','o'],['i','s'],
+    ['er','s'],['o','w'],['c','h'],['w','h'],['an','d'],['th','at'],
+    ['i','on'],['at','ion'],['a','s'],['r','e'],['r','s'],['s','t']
   ];
-  let step = 0;
 
-  function renderStep() {
-    const s = steps[step];
-    const colors = ['#635BFF','#946800','#0570DE','#00875A','#DF1B41','#4F46E5','#946800','#00875A'];
-    let html = `<text x="190" y="24" text-anchor="middle" font-family="Barlow Condensed" font-size="11" fill="#697386" letter-spacing="2">${s.desc.toUpperCase()}</text>`;
+  const PILL_COLORS = ['#635BFF','#0570DE','#946800','#00875A','#DF1B41','#4F46E5','#7C3AED','#0891B2'];
 
-    const tokenW = Math.min(340 / s.tokens.length - 4, 52);
-    const startX = (380 - (s.tokens.length * (tokenW + 4))) / 2;
+  let tokens = [];
+  let mergeStep = 0;
+  let autoTimer = null;
 
-    s.tokens.forEach((tok, i) => {
-      const x = startX + i * (tokenW + 4);
-      const color = colors[i % colors.length];
-      html += `<rect x="${x}" y="40" width="${tokenW}" height="28" rx="4" fill="${color}20" stroke="${color}40" stroke-width="1"/>`;
-      html += `<text x="${x + tokenW/2}" y="59" text-anchor="middle" font-family="JetBrains Mono" font-size="${tok.length > 4 ? 9 : 11}" fill="${color}">${tok}</text>`;
-    });
-
-    html += `<rect x="10" y="82" width="360" height="1" fill="#E3E8EF"/>`;
-    html += `<text x="10" y="100" font-family="JetBrains Mono" font-size="10" fill="#697386">TOKENS: ${s.tokens.length}</text>`;
-    html += `<text x="370" y="100" text-anchor="end" font-family="JetBrains Mono" font-size="10" fill="#635BFF">${s.label}</text>`;
-
-    steps.forEach((_, i) => {
-      const cx = 50 + i * 70;
-      html += `<rect x="${cx-7}" y="123" width="14" height="14" rx="1" fill="${i === step ? '#635BFF' : '#FFFFFF'}" stroke="${i <= step ? '#635BFF' : '#E3E8EF'}" stroke-width="1.5"/>`;
-      if (i < steps.length - 1) html += `<line x1="${cx+7}" y1="130" x2="${cx+63}" y2="130" stroke="${i < step ? '#635BFF60' : '#E3E8EF80'}" stroke-width="1"/>`;
-      html += `<text x="${cx}" y="150" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="${i === step ? '#635BFF' : '#697386'}">${i+1}</text>`;
-    });
-
-    html += `<text x="190" y="185" text-anchor="middle" font-family="Barlow Condensed" font-size="11" fill="#697386" letter-spacing="1">CLICK TO ADVANCE</text>`;
-
-    const barW = Math.max(8, Math.min(340, step === 4 ? 340 * (2/100277) * 10000 : step === 0 ? 30 : step === 1 ? 80 : step === 2 ? 160 : 260));
-    html += `<rect x="20" y="205" width="340" height="6" rx="0" fill="#F6F9FC"/>`;
-    html += `<rect x="20" y="205" width="${barW}" height="6" rx="0" fill="url(#grad)"/>`;
-    html += `<defs><linearGradient id="grad" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#635BFF"/><stop offset="1" stop-color="#946800"/></linearGradient></defs>`;
-    html += `<text x="20" y="225" font-family="JetBrains Mono" font-size="9" fill="#697386">SEQUENCE LENGTH →</text>`;
-    html += `<text x="360" y="225" text-anchor="end" font-family="JetBrains Mono" font-size="9" fill="#697386">← VOCAB SIZE</text>`;
-
-    const annotations = ['12 symbols (chars)','12 symbols (bytes: 0–255)','7 tokens','3 tokens','2 tokens ✓'];
-    html += `<text x="190" y="260" text-anchor="middle" font-family="Inter" font-size="13" font-weight="700" fill="#1A1F36">${annotations[step]}</text>`;
-
-    svg.innerHTML = html;
+  function initTokens(text) {
+    tokens = (text || 'hello').split('');
+    mergeStep = 0;
+    log.innerHTML = '';
+    render();
   }
 
-  function advance() {
-    step = (step + 1) % steps.length;
-    renderStep();
-    const lbl = document.getElementById('bpe-step-label');
-    if (lbl) lbl.textContent = `Step ${step + 1} of ${steps.length}`;
+  function render() {
+    strip.innerHTML = '';
+    tokens.forEach((tok, i) => {
+      const pill = document.createElement('span');
+      pill.className = 'bpe-pill';
+      pill.textContent = tok;
+      const color = PILL_COLORS[i % PILL_COLORS.length];
+      pill.style.cssText = `color:${color};border-color:${color}55;background:${color}12`;
+      strip.appendChild(pill);
+    });
+    countEl.textContent = tokens.length + ' 个词元' + (tokens.length !== 1 ? '' : '');
+    stepBtn.disabled = mergeStep >= MERGES.length;
   }
 
-  renderStep();
-  svg.addEventListener('click', advance);
-  const advBtn = document.getElementById('bpe-advance-btn');
-  if (advBtn) advBtn.addEventListener('click', advance);
+  function applyNextMerge() {
+    while (mergeStep < MERGES.length) {
+      const [a, b] = MERGES[mergeStep++];
+      let merged = false;
+      const next = [];
+      let i = 0;
+      while (i < tokens.length) {
+        if (i < tokens.length - 1 && tokens[i] === a && tokens[i+1] === b) {
+          next.push(a + b);
+          i += 2;
+          merged = true;
+        } else {
+          next.push(tokens[i++]);
+        }
+      }
+      if (merged) {
+        tokens = next;
+        const entry = document.createElement('div');
+        entry.innerHTML = `→ 合并 <span class="bpe-log-token">'${a}'</span>+<span class="bpe-log-token">'${b}'</span> → <span class="bpe-log-token">'${a+b}'</span>`;
+        log.insertBefore(entry, log.firstChild);
+        render();
+        requestAnimationFrame(() => {
+          strip.querySelectorAll('.bpe-pill').forEach(p => {
+            if (p.textContent === a+b) { p.classList.remove('merging'); void p.offsetWidth; p.classList.add('merging'); }
+          });
+        });
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function startAuto() {
+    autoBtn.textContent = '⏸ 暂停';
+    autoTimer = setInterval(() => { if (!applyNextMerge()) stopAuto(); }, 380);
+  }
+
+  function stopAuto() {
+    clearInterval(autoTimer);
+    autoTimer = null;
+    autoBtn.textContent = '▶ 自动';
+  }
+
+  input.addEventListener('input', () => { stopAuto(); initTokens(input.value); });
+  stepBtn.addEventListener('click', () => { stopAuto(); applyNextMerge(); });
+  autoBtn.addEventListener('click', () => autoTimer ? stopAuto() : startAuto());
+  resetBtn.addEventListener('click', () => { stopAuto(); initTokens(input.value); });
+
+  initTokens(input.value);
 })();
 
 
 // ═══════════════════════════════════════════════
-// TRANSFORMER DIAGRAM SVG
+// TRANSFORMER DIAGRAM SVG — interactive rebuild
 // ═══════════════════════════════════════════════
 (function(){
-  const svg = document.getElementById('transformer-svg');
-  const layers = [
-    { label: 'Input Tokens', color: '#946800', y: 310 },
-    { label: 'Token Embedding', color: '#946800', y: 272 },
-    { label: 'Multi-Head Attention', color: '#635BFF', y: 220 },
-    { label: 'Feed Forward (MLP)', color: '#0570DE', y: 168 },
-    { label: 'Layer Norm + Residual', color: '#697386', y: 130 },
-    { label: '× N Transformer Blocks', color: '#9B8E86', y: 95 },
-    { label: 'Output Logits', color: '#00875A', y: 50 },
+  const svg  = document.getElementById('transformer-svg');
+  const card = document.getElementById('transformer-card');
+  if (!svg || !card) return;
+
+  const LAYERS = [
+    {id:'input',  y:306, h:24, color:'#946800', label:'输入词元',
+     text:'原始词元 ID：0 到 100,276 之间的整数，代表文本中的子词片段。'},
+    {id:'embed',  y:268, h:24, color:'#946800', label:'词元嵌入',
+     text:'每个 ID 映射到一个约含 4,096 个数字的已学习向量。可将它看作意义空间的坐标：随机初始化，再由训练塑形。'},
+    {id:'attn',   y:218, h:32, color:'#635BFF', label:'多头注意力',
+     text:'每个词元通过注意力汇集所有其他词元的信息，并学习上下文权重。这里以一个 700 亿参数模型为例：64 个注意力头并行捕捉不同关系模式。', heatmap:true},
+    {id:'mlp',    y:166, h:32, color:'#0570DE', label:'前馈网络（MLP）',
+     text:'两个线性层之间加入非线性变换，分别作用于每个词元。这里的中间宽度为模型宽度的 4 倍，大部分参数位于此处。'},
+    {id:'norm',   y:126, h:24, color:'#697386', label:'层归一化 + 残差连接',
+     text:'每个子层的输出通过残差连接加回输入，并配合归一化，让梯度能够流经 80 多个堆叠块。'},
+    {id:'repeat', y:90,  h:22, color:'#9B8E86', label:'× N 个 Transformer 块',
+     text:'注意力、MLP 与归一化结构重复 N 次。GPT-3 有 96 个块，Llama 3 70B 有 80 个块；每个块继续细化上一层的表示。'},
+    {id:'logits', y:48,  h:24, color:'#00875A', label:'输出 logits',
+     text:'最终隐藏状态投影为 100,277 个 logits，词表中每个词元对应一个。Softmax 将它们转换为下一个词元的概率。'}
   ];
 
-  let html = '';
-  for (let i = 0; i < 8; i++) {
-    html += `<line x1="${45*i}" y1="0" x2="${45*i}" y2="340" stroke="rgba(216,208,194,0.7)" stroke-width=".5"/>`;
-    html += `<line x1="0" y1="${45*i}" x2="360" y2="${45*i}" stroke="rgba(216,208,194,0.7)" stroke-width=".5"/>`;
+  let activeId = null;
+  let dotY = 306;
+  let dotTarget = 48;
+
+  function heatmapHTML() {
+    const W = [[.9,.05,.03,.02],[.1,.7,.15,.05],[.05,.2,.65,.1],[.08,.07,.05,.8]];
+    let h = '<div class="transformer-heatmap">';
+    for (const row of W) for (const w of row) {
+      h += `<div class="tc-cell" style="background:rgba(99,91,255,${(0.08+w*.92).toFixed(2)})"></div>`;
+    }
+    return h + '</div><div style="font-size:10px;color:var(--txt2);margin-top:4px">示意 4×4 注意力矩阵（颜色越深，权重越高）</div>';
   }
 
-  layers.forEach((layer, i) => {
-    const isMain = i >= 2 && i <= 3;
-    const h = isMain ? 32 : 26;
-    const alpha = i === 5 ? '20' : '18';
-    html += `<rect x="30" y="${layer.y - h/2}" width="300" height="${h}" rx="5" fill="${layer.color}${alpha}" stroke="${layer.color}40" stroke-width="1.5"/>`;
-    html += `<text x="180" y="${layer.y + 5}" text-anchor="middle" font-family="JetBrains Mono" font-size="${isMain ? 11 : 10}" fill="${layer.color}">${layer.label}</text>`;
-    if (i < layers.length - 1) {
-      const nextY = layers[i+1].y + (isMain ? 16 : 13);
-      html += `<line x1="180" y1="${layer.y - h/2}" x2="180" y2="${nextY + 2}" stroke="${layer.color}50" stroke-width="1" stroke-dasharray="${i>=4?'3,3':''}"/>`;
-      html += `<polygon points="175,${nextY + 8} 185,${nextY + 8} 180,${nextY + 14}" fill="${layers[i+1].color}80"/>`;
+  function render(dy) {
+    let html = '';
+    for (let i = 0; i < 8; i++) {
+      html += `<line x1="${45*i}" y1="0" x2="${45*i}" y2="340" stroke="rgba(216,208,194,.5)" stroke-width=".5"/>`;
+      html += `<line x1="0" y1="${45*i}" x2="360" y2="${45*i}" stroke="rgba(216,208,194,.5)" stroke-width=".5"/>`;
     }
-  });
 
-  html += `<circle cx="90" cy="220" r="4" fill="#635BFF" opacity="0.55"><animate attributeName="r" values="3;6;3" dur="2s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.55;1;0.55" dur="2s" repeatCount="indefinite"/></circle>`;
-  html += `<circle cx="270" cy="220" r="4" fill="#635BFF" opacity="0.55"><animate attributeName="r" values="3;6;3" dur="2s" begin="1s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.55;1;0.55" dur="2s" begin="1s" repeatCount="indefinite"/></circle>`;
+    LAYERS.forEach((layer, idx) => {
+      const isActive = layer.id === activeId;
+      html += `<rect data-layer="${layer.id}" x="24" y="${layer.y-layer.h/2}" width="312" height="${layer.h}" rx="5"
+        fill="${layer.color}${isActive?'30':'18'}" stroke="${layer.color}${isActive?'cc':'40'}"
+        stroke-width="${isActive?2:1.5}" style="cursor:pointer"/>`;
+      html += `<text x="180" y="${layer.y+5}" text-anchor="middle" font-family="JetBrains Mono"
+        font-size="${layer.h>=32?11:10}" fill="${layer.color}" style="pointer-events:none">${layer.label}</text>`;
+      const next = LAYERS[idx+1];
+      if (next) {
+        const fy = layer.y-layer.h/2, ty = next.y+next.h/2, my = (fy+ty)/2;
+        html += `<line x1="180" y1="${fy}" x2="180" y2="${my+4}" stroke="${layer.color}40" stroke-width="1"${layer.id==='norm'?' stroke-dasharray="3,3"':''}/>`;
+        html += `<polygon points="175,${my+8} 185,${my+8} 180,${my+14}" fill="${next.color}80"/>`;
+      }
+    });
 
-  svg.innerHTML = html;
+    html += `<circle cx="40" cy="${dy}" r="5" fill="rgba(99,91,255,.85)">
+      <animate attributeName="opacity" values=".6;1;.6" dur="1.4s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="40" cy="${dy}" r="9" fill="none" stroke="rgba(99,91,255,.3)" stroke-width="1.5">
+      <animate attributeName="r" values="7;13;7" dur="1.4s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values=".5;0;.5" dur="1.4s" repeatCount="indefinite"/>
+    </circle>`;
+
+    svg.innerHTML = html;
+
+    svg.querySelectorAll('[data-layer]').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = el.dataset.layer;
+        if (activeId === id) { activeId = null; card.classList.remove('tc-visible'); card.innerHTML = ''; }
+        else {
+          activeId = id;
+          const layer = LAYERS.find(l => l.id === id);
+          card.innerHTML = `<div class="transformer-card-title" style="color:${layer.color}">${layer.label}</div>
+            <div>${layer.text}</div>${layer.heatmap ? heatmapHTML() : ''}`;
+          card.classList.add('tc-visible');
+        }
+        render(Math.round(dotY));
+      });
+    });
+  }
+
+  function animFrame() {
+    dotY += (dotTarget - dotY) * 0.025;
+    if (Math.abs(dotY - dotTarget) < 3) dotTarget = dotTarget === 48 ? 306 : 48;
+    render(Math.round(dotY));
+    requestAnimationFrame(animFrame);
+  }
+  animFrame();
 })();
 
 // ═══════════════════════════════════════════════
@@ -219,16 +310,18 @@
 
   const trainingTexts = {
     1: `<span class="incoherent">wqp mxr tkz bnf opc lsw mzq vdf nrt</span>`,
-    500: `<span class="incoherent">the model has learn</span><span class="coherent">ing</span> <span class="incoherent">but confus</span><span class="coherent">tion</span> <span class="incoherent">still wqp</span> <span class="coherent">the model</span> <span class="incoherent">bns</span> <span class="coherent">to predict</span>...`,
-    5000: `<span class="coherent">The language model learns to predict the next token in a sequence.</span> <span class="incoherent">Training requires many thousands of</span> <span class="coherent">gradient descent steps</span> <span class="incoherent">to converge</span>.`,
-    32000: `<span class="coherent">The neural network has learned the statistical patterns of human language. It can generate coherent text on virtually any topic, answer questions, write code, and engage in multi-turn conversations.</span>`
+    500: `<span class="incoherent">模型已经学</span><span class="coherent">会</span> <span class="incoherent">但混乱</span><span class="coherent">仍在</span> <span class="incoherent">某些 wqp</span> <span class="coherent">模型</span> <span class="incoherent">bns</span> <span class="coherent">开始预测</span>……`,
+    5000: `<span class="coherent">语言模型学习预测序列中的下一个词元。</span> <span class="incoherent">训练需要成千上万次</span> <span class="coherent">梯度下降更新</span> <span class="incoherent">才能收敛</span>.`,
+    32000: `<span class="coherent">神经网络已经学到了人类语言的统计模式。它可以围绕广泛主题生成连贯文本、回答问题、编写代码并进行多轮对话。</span>`
   };
 
   function drawCurve(upToStep) {
+    const dpr = window.devicePixelRatio || 1;
     const W = canvas.offsetWidth || 400;
     const H = 200;
-    canvas.width = W;
-    canvas.height = H;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const pad = { l: 40, r: 20, t: 15, b: 30 };
     const cW = W - pad.l - pad.r;
     const cH = H - pad.t - pad.b;
@@ -341,130 +434,160 @@
 })();
 
 // ═══════════════════════════════════════════════
-// INFERENCE — Probability Sampling Demo
+// INFERENCE — Probability Sampling Demo (canvas rebuild)
 // ═══════════════════════════════════════════════
 (function(){
-  const seqEl = document.getElementById('gen-seq');
-  const barsEl = document.getElementById('prob-bars');
-  const tempSlider = document.getElementById('temp-slider');
-  const tempVal = document.getElementById('temp-val');
+  const canvas    = document.getElementById('prob-canvas');
+  const seqEl     = document.getElementById('gen-seq');
+  const tempSl    = document.getElementById('temp-slider');
+  const tempValEl = document.getElementById('temp-val');
   const sampleBtn = document.getElementById('sample-btn');
-  const resetBtn = document.getElementById('reset-gen-btn');
-  const infoEl = document.getElementById('sample-info');
+  const resetBtn  = document.getElementById('reset-gen-btn');
+  if (!canvas || !seqEl) return;
+  const ctx = canvas.getContext('2d');
 
-  const tokenSets = {
+  const COLORS = ['#635BFF','#0570DE','#946800','#00875A','#DF1B41','#4F46E5','#7C3AED','#0891B2'];
+
+  const TOKEN_SETS = {
     'The sky appears blue': [
-      {t: ' because', raw: 0.31}, {t: ' due', raw: 0.18}, {t: ',', raw: 0.12},
-      {t: ' to', raw: 0.10}, {t: ' when', raw: 0.08}, {t: ' as', raw: 0.06},
-      {t: ' from', raw: 0.04}, {t: ' and', raw: 0.03},
+      {t:' because',raw:.31},{t:' due',raw:.18},{t:',',raw:.12},
+      {t:' to',raw:.10},{t:' when',raw:.08},{t:' as',raw:.06},{t:' from',raw:.04},{t:' and',raw:.03}
     ],
     'The sky appears blue because': [
-      {t: ' of', raw: 0.42}, {t: ' light', raw: 0.20}, {t: ' Rayleigh', raw: 0.12},
-      {t: ' the', raw: 0.09}, {t: ' shorter', raw: 0.06}, {t: ' sunlight', raw: 0.04},
-      {t: ' scattered', raw: 0.03}, {t: ' wavelength', raw: 0.02},
+      {t:' of',raw:.42},{t:' light',raw:.20},{t:' Rayleigh',raw:.12},
+      {t:' the',raw:.09},{t:' shorter',raw:.06},{t:' sunlight',raw:.04},{t:' scattered',raw:.03},{t:' wavelength',raw:.02}
     ],
     'The sky appears blue because of': [
-      {t: ' Rayleigh', raw: 0.38}, {t: ' the', raw: 0.25}, {t: ' light', raw: 0.12},
-      {t: ' scattering', raw: 0.09}, {t: ' atmospheric', raw: 0.07}, {t: ' how', raw: 0.04},
-      {t: ' sunlight', raw: 0.03}, {t: ' blue', raw: 0.02},
+      {t:' Rayleigh',raw:.38},{t:' the',raw:.25},{t:' light',raw:.12},
+      {t:' scattering',raw:.09},{t:' atmospheric',raw:.07},{t:' how',raw:.04},{t:' sunlight',raw:.03},{t:' blue',raw:.02}
     ],
+    'The sky appears blue because of Rayleigh': [
+      {t:' scattering',raw:.72},{t:',',raw:.10},{t:' diffusion',raw:.07},
+      {t:' effects',raw:.04},{t:' dispersion',raw:.03},{t:' waves',raw:.02},{t:' radiation',raw:.01},{t:' emission',raw:.01}
+    ],
+    'The sky appears blue because of Rayleigh scattering': [
+      {t:', ',raw:.35},{t:' of',raw:.28},{t:' —',raw:.15},
+      {t:'.',raw:.12},{t:' which',raw:.06},{t:' where',raw:.04}
+    ],
+    'The sky appears blue because of Rayleigh scattering,': [
+      {t:' which',raw:.45},{t:' where',raw:.20},{t:' a',raw:.15},
+      {t:' shorter',raw:.10},{t:' blue',raw:.06},{t:' sunlight',raw:.04}
+    ],
+    'The sky appears blue because of Rayleigh scattering, which': [
+      {t:' causes',raw:.38},{t:' scatters',raw:.28},{t:' makes',raw:.18},
+      {t:' bends',raw:.08},{t:' affects',raw:.05},{t:' creates',raw:.03}
+    ]
   };
-  const fallback = [
-    {t: ' light', raw: 0.28}, {t: ' the', raw: 0.22}, {t: ' a', raw: 0.14},
-    {t: ' an', raw: 0.10}, {t: ' scattering', raw: 0.08}, {t: ' wavelengths', raw: 0.06},
-    {t: ' blue', raw: 0.05}, {t: ' molecules', raw: 0.04},
+  const FALLBACK = [
+    {t:' light',raw:.28},{t:' the',raw:.22},{t:' shorter',raw:.14},
+    {t:' blue',raw:.12},{t:' wave',raw:.10},{t:' scatter',raw:.08},{t:' sun',raw:.04},{t:' air',raw:.02}
   ];
 
-  const barColors = ['#635BFF','#0570DE','#946800','#00875A','#DF1B41','#4F46E5','#946800','#00875A'];
-
-  function applyTemp(tokens, temp) {
-    const logits = tokens.map(t => Math.log(t.raw) / temp);
+  function softmax(tokens, temp) {
+    const logits = tokens.map(t => Math.log(Math.max(t.raw, 1e-9)) / temp);
     const maxL = Math.max(...logits);
     const exps = logits.map(l => Math.exp(l - maxL));
-    const sum = exps.reduce((a,b) => a+b, 0);
-    return tokens.map((t, i) => ({ ...t, prob: exps[i] / sum }));
+    const sum  = exps.reduce((a,b) => a+b, 0);
+    return tokens.map((t,i) => ({...t, prob: exps[i]/sum}));
   }
 
-  function renderBars(tokens, selectedIdx = -1) {
-    const temp = parseFloat(tempSlider.value);
-    const processed = applyTemp(tokens, temp);
-    barsEl.innerHTML = '';
-    processed.forEach((t, i) => {
-      const pct = (t.prob * 100).toFixed(1);
-      const row = document.createElement('div');
-      row.className = 'prob-row' + (i === selectedIdx ? ' selected' : '');
-      const color = barColors[i % barColors.length];
-      row.innerHTML = `
-        <div class="prob-token-label">${t.t}</div>
-        <div class="prob-bar-bg">
-          <div class="prob-bar-fill" style="width:${t.prob * 100}%;background:${color}${i === selectedIdx ? 'ff' : '66'}">
-            <span>${pct}%</span>
-          </div>
-        </div>`;
-      barsEl.appendChild(row);
+  function getTokens() { return TOKEN_SETS[seqEl.textContent.trim()] || FALLBACK; }
+
+  let heights = [];
+  let targets = [];
+  let selectedIdx = -1;
+
+  function computeTargets() {
+    const temp = parseFloat(tempSl.value);
+    const toks = softmax(getTokens(), temp);
+    targets = toks.map(t => t.prob);
+    return toks;
+  }
+
+  function draw(toks) {
+    const dpr  = window.devicePixelRatio || 1;
+    const cssW = canvas.offsetWidth || 400;
+    const cssH = 180;
+    canvas.width  = cssW * dpr;
+    canvas.height = cssH * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssW, cssH);
+
+    const n = toks.length, gap = 6;
+    const barW    = (cssW - gap * (n + 1)) / n;
+    const maxBarH = cssH - 40;
+
+    toks.forEach((t, i) => {
+      const x     = gap + i * (barW + gap);
+      const h     = Math.max((heights[i] || 0) * maxBarH, 1);
+      const y     = cssH - 24 - h;
+      const color = COLORS[i % COLORS.length];
+      const sel   = i === selectedIdx;
+
+      ctx.globalAlpha = sel ? 1 : 0.6;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(x, y, barW, h, [3,3,0,0]);
+      else ctx.rect(x, y, barW, h);
+      ctx.fill();
+
+      if (sel) { ctx.shadowColor = color; ctx.shadowBlur = 18; ctx.fill(); ctx.shadowBlur = 0; }
+      ctx.globalAlpha = 1;
+
+      ctx.fillStyle = sel ? color : color + 'bb';
+      ctx.font = `${sel ? 'bold ' : ''}10px 'JetBrains Mono',monospace`;
+      ctx.textAlign = 'center';
+      ctx.fillText(((heights[i]||0)*100).toFixed(0)+'%', x+barW/2, Math.max(y-4, 12));
+
+      ctx.fillStyle = sel ? color : '#697386';
+      ctx.font = `${sel ? 'bold ' : ''}9px 'JetBrains Mono',monospace`;
+      const lbl = (t.t||'').trim() || '·';
+      ctx.fillText(lbl.length > 8 ? lbl.slice(0,7)+'…' : lbl, x+barW/2, cssH - 6);
     });
-    return processed;
   }
 
-  function getCurrentTokens() {
-    const seq = seqEl.textContent;
-    return tokenSets[seq] || fallback;
+  function frame() {
+    const toks = computeTargets();
+    if (heights.length !== targets.length) {
+      heights = [...targets];
+    } else {
+      for (let i = 0; i < heights.length; i++) heights[i] += (targets[i] - heights[i]) * 0.14;
+    }
+    draw(toks);
+    requestAnimationFrame(frame);
   }
 
-  let lastProcessed = null;
-
-  function updateBars() {
-    lastProcessed = renderBars(getCurrentTokens());
-  }
-
-  tempSlider.addEventListener('input', () => {
-    tempVal.textContent = tempSlider.value;
-    updateBars();
-  });
+  tempSl.addEventListener('input', () => { tempValEl.textContent = parseFloat(tempSl.value).toFixed(1); });
 
   sampleBtn.addEventListener('click', () => {
     sampleBtn.disabled = true;
-    const temp = parseFloat(tempSlider.value);
-    const tokens = getCurrentTokens();
-    const processed = applyTemp(tokens, temp);
+    const toks = softmax(getTokens(), parseFloat(tempSl.value));
+    let r = Math.random(), cumul = 0, picked = toks.length - 1;
+    for (let i = 0; i < toks.length; i++) { cumul += toks[i].prob; if (r < cumul) { picked = i; break; } }
 
-    renderBars(tokens);
+    selectedIdx = picked;
+    const base  = seqEl.textContent;
+    const added = toks[picked].t;
+    seqEl.innerHTML = '';
+    const baseSpan = document.createElement('span');
+    baseSpan.textContent = base;
+    const newSpan = document.createElement('span');
+    newSpan.className = 'gen-token-new';
+    newSpan.textContent = added;
+    seqEl.appendChild(baseSpan);
+    seqEl.appendChild(newSpan);
+    requestAnimationFrame(() => requestAnimationFrame(() => newSpan.classList.add('gen-token-new--in')));
 
-    setTimeout(() => {
-      const r = Math.random();
-      let cumul = 0, selectedIdx = processed.length - 1;
-      for (let i = 0; i < processed.length; i++) {
-        cumul += processed[i].prob;
-        if (r < cumul) { selectedIdx = i; break; }
-      }
-
-      renderBars(tokens, selectedIdx);
-
-      setTimeout(() => {
-        const newText = seqEl.textContent + processed[selectedIdx].t;
-        seqEl.innerHTML = '';
-        const span = document.createElement('span');
-        span.className = 'gen-token';
-        span.textContent = newText;
-        seqEl.appendChild(span);
-
-        infoEl.textContent = `Sampled "${processed[selectedIdx].t}" (${(processed[selectedIdx].prob * 100).toFixed(1)}% prob)`;
-
-        setTimeout(() => {
-          updateBars();
-          sampleBtn.disabled = false;
-        }, 300);
-      }, 600);
-    }, 200);
+    setTimeout(() => { selectedIdx = -1; sampleBtn.disabled = false; }, 700);
   });
 
   resetBtn.addEventListener('click', () => {
     seqEl.textContent = 'The sky appears blue';
-    infoEl.textContent = '';
-    updateBars();
+    selectedIdx = -1;
+    heights = [];
   });
 
-  updateBars();
+  frame();
 })();
 
 // ═══════════════════════════════════════════════
@@ -591,21 +714,26 @@
 (function() {
   const canvas = document.getElementById('rag-canvas');
   if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.offsetWidth || 500;
+  const H = canvas.offsetHeight || 200;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
   const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   const dots = [
-    {x: .28, y: .38, c: 'rgba(5,112,222,0.65)', r: 5, lbl: 'colony', retrieved: false},
-    {x: .34, y: .30, c: 'rgba(5,112,222,0.65)', r: 5, lbl: 'capital', retrieved: false},
-    {x: .22, y: .44, c: 'rgba(5,112,222,0.5)', r: 4, lbl: 'colonists', retrieved: false},
+    {x: .28, y: .38, c: 'rgba(5,112,222,0.65)', r: 5, lbl: '殖民地', retrieved: false},
+    {x: .34, y: .30, c: 'rgba(5,112,222,0.65)', r: 5, lbl: '首府', retrieved: false},
+    {x: .22, y: .44, c: 'rgba(5,112,222,0.5)', r: 4, lbl: '殖民者', retrieved: false},
     {x: .30, y: .52, c: 'rgba(5,112,222,0.35)', r: 4, lbl: '', retrieved: false},
-    {x: .68, y: .32, c: 'rgba(123,110,102,0.55)', r: 5, lbl: 'temperature', retrieved: false},
-    {x: .74, y: .40, c: 'rgba(123,110,102,0.55)', r: 4, lbl: 'climate', retrieved: false},
-    {x: .62, y: .25, c: 'rgba(123,110,102,0.45)', r: 4, lbl: 'geography', retrieved: false},
-    {x: .60, y: .70, c: 'rgba(123,110,102,0.5)', r: 5, lbl: 'mission', retrieved: false},
-    {x: .68, y: .62, c: 'rgba(123,110,102,0.45)', r: 4, lbl: 'launch', retrieved: false},
+    {x: .68, y: .32, c: 'rgba(123,110,102,0.55)', r: 5, lbl: '温度', retrieved: false},
+    {x: .74, y: .40, c: 'rgba(123,110,102,0.55)', r: 4, lbl: '气候', retrieved: false},
+    {x: .62, y: .25, c: 'rgba(123,110,102,0.45)', r: 4, lbl: '地理', retrieved: false},
+    {x: .60, y: .70, c: 'rgba(123,110,102,0.5)', r: 5, lbl: '任务', retrieved: false},
+    {x: .68, y: .62, c: 'rgba(123,110,102,0.45)', r: 4, lbl: '发射', retrieved: false},
     {x: .54, y: .76, c: 'rgba(123,110,102,0.35)', r: 4, lbl: '', retrieved: false},
-    {x: .31, y: .33, c: '#635BFF', r: 7, lbl: 'query ▲', isQuery: true}
+    {x: .31, y: .33, c: '#635BFF', r: 7, lbl: '查询 ▲', isQuery: true}
   ];
 
   let showQuery = false, showLines = false;
@@ -618,9 +746,9 @@
     for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
     ctx.font = '10px JetBrains Mono,monospace';
     ctx.fillStyle = 'rgba(5,112,222,0.3)';
-    ctx.fillText('colony / capital cluster', .06*W, .75*H);
+    ctx.fillText('殖民地／首府簇', .06*W, .75*H);
     ctx.fillStyle = 'rgba(123,110,102,0.3)';
-    ctx.fillText('science cluster', .55*W, .52*H);
+    ctx.fillText('科学主题簇', .55*W, .52*H);
     if (showLines) {
       const q = dots[dots.length-1];
       [dots[0], dots[1]].forEach(d => {
@@ -679,12 +807,12 @@
     if (ansGood) ansGood.style.opacity = '0.3';
     if (goodBadge) goodBadge.style.opacity = '0.3';
     showLines = false; draw();
-    if (runBtn) { runBtn.disabled = false; runBtn.textContent = '▶ Run RAG Query'; }
+    if (runBtn) { runBtn.disabled = false; runBtn.textContent = '▶ 运行 RAG 查询'; }
   }
 
   function runDemo() {
     if (!runBtn) return;
-    runBtn.disabled = true; runBtn.textContent = 'Running…';
+    runBtn.disabled = true; runBtn.textContent = '运行中……';
     const timings = [0, 700, 1400, 2100, 2900, 3700];
     timings.forEach((t, i) => {
       setTimeout(() => {
@@ -696,7 +824,7 @@
         if (i === 5) {
           if (ansGood) ansGood.style.opacity = '1';
           if (goodBadge) goodBadge.style.opacity = '1';
-          runBtn.disabled = false; runBtn.textContent = '▶ Run Again';
+          runBtn.disabled = false; runBtn.textContent = '▶ 再运行一次';
         }
       }, t);
     });
